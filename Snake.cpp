@@ -4,7 +4,7 @@
 
 Snake::Snake(Point p)
 {
-    const int size = 3;
+    const int size = 2;
     points.resize(size);
     for (int i = 0; i < size; ++i)
     {
@@ -38,16 +38,31 @@ void Snake::Move(Point p)
     if ((points[1].x == p.x) && (points[1].y == p.y))
         return;
 
-    vector<Point>::iterator it;
-    it = points.begin();
-    points.emplace(it, p);
+    points.emplace(points.begin(), p);
     points.pop_back();
 
 }
 
 void Snake::Add(Point p)
 {
-    return;
+    const bool is_right = ((points[0].x == p.x - 1) && (points[0].y == p.y));
+    const bool is_left = ((points[0].x == p.x + 1) && (points[0].y == p.y));
+    const bool is_top = ((points[0].x == p.x) && (points[0].y == p.y - 1));
+    const bool is_bottom = ((points[0].x == p.x) && (points[0].y == p.y + 1));
+
+    assert(is_top || is_bottom || is_right || is_left);
+    
+    points.emplace(points.begin(), p);
+}
+
+bool Snake::PointBelongsToTheSnake(Point p)
+{
+    for (int i = 0; i < points.size(); ++i)
+    {
+        if (p == points[i])
+            return true;
+    }
+    return false;
 }
 
 void Snake::Print()
@@ -56,3 +71,12 @@ void Snake::Print()
     for (auto &point:points)
         pr.Print(point, 219);
 }
+
+// 
+//     @
+//     @
+//     @@@@@@@$
+//            * 
+// 
+// 
+// 

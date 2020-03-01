@@ -12,5 +12,6 @@ public:
     Point Tail();
     void Move(Point p);
     void Add(Point p);
+    bool PointBelongsToTheSnake(Point p);
     void Print();
 };
