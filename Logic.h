@@ -4,15 +4,19 @@
 
 class Logic
 {
-    const int hight = 35;
-    const int weight = 35;
+    const short hight = 25;
+    const short weight = 45;
     const char snake_symbol = 219;
+    const char food_symbol = '*';
     const Point snake_start_position{ 10, 10 };
 
     Snake snake;
     Point food;
+    PrintHelper pr;
+
     Point change(Point p, char c);
     Point generate_food_position();
+    void draw_a_field();
    
 public:
     Logic();

@@ -4,7 +4,7 @@
 
 Snake::Snake(Point p)
 {
-    const int size = 2;
+    const int size = 1;
     points.resize(size);
     for (int i = 0; i < size; ++i)
     {
@@ -35,7 +35,7 @@ void Snake::Move(Point p)
 
     assert(is_top || is_bottom || is_right || is_left);
 
-    if ((points[1].x == p.x) && (points[1].y == p.y))
+    if ((points.size() > 1) && (points[1].x == p.x) && (points[1].y == p.y))
         return;
 
     points.emplace(points.begin(), p);
@@ -65,18 +65,9 @@ bool Snake::PointBelongsToTheSnake(Point p)
     return false;
 }
 
-void Snake::Print()
+bool Snake::PointIsSecondElemOfSnake(Point p)
 {
-    PrintHelper pr;
-    for (auto &point:points)
-        pr.Print(point, 219);
+    if (p == points[1])
+        return true;
+    return false;
 }
-
-// 
-//     @
-//     @
-//     @@@@@@@$
-//            * 
-// 
-// 
-// 
