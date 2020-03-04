@@ -17,6 +17,7 @@ class Logic
     Point change(Point p, char c);
     Point generate_food_position();
     void draw_a_field();
+    char generate_new_direction();
    
 public:
     Logic();

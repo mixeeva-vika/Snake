@@ -1,5 +1,6 @@
 #include"Logic.h"
-#include<time.h>
+#include <thread>
+#include <chrono>
 
 Logic::Logic(): snake(snake_start_position) 
 {
@@ -33,10 +34,10 @@ Point Logic::change(Point p, char c)
     }
     if (c == 'd')
     {
-        p.x += (p.x == (weight - 1)) ? 0 : 1; // ++p.x;
+        p.x += (p.x == (weight - 1)) ? 0 : 1; 
     }
     if (c == 's')
-        p.y += (p.y == (hight - 1)) ? 0 : 1;//++p.y;
+        p.y += (p.y == (hight - 1)) ? 0 : 1;
     return p;
 }
 
@@ -52,15 +53,31 @@ Point Logic::generate_food_position()
     return p;
 }
 
+
+char Logic::generate_new_direction()
+{
+    std::vector<char> v{'a','w', 'd', 's'};
+    int number = rand() % 4;
+    return v[number];
+}
+
 void Logic::Run()
 {
+    int step = 0;
     pr.Print(food, food_symbol);
     pr.Print(snake.Head(), snake_symbol);
-
+    Point new_pos;
+    char new_dir;
     while (true)
     {
-        char c = _getch();
-        Point new_pos = change(snake.Head(), c);
+        //char c = _getch();
+        if (step % 10 == 0)
+        {
+            new_dir = generate_new_direction();
+        }
+        new_pos = change(snake.Head(), new_dir);
+        step++;
+        std::this_thread::sleep_for(250ms);
         if (new_pos == snake.Head())
             continue;
         if (snake.PointBelongsToTheSnake(new_pos))
@@ -84,5 +101,6 @@ void Logic::Run()
         }
 
         pr.Print(new_pos, snake_symbol);
+       
     }
 }

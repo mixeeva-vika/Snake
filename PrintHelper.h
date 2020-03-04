@@ -1,21 +1,22 @@
 #pragma once
 #include <iostream>
-#include <conio.h>
 #include"Point.h"
-namespace
+namespace win
 {
+#include <conio.h>
 #include <windows.h>
 }
 using namespace std;
 
 class PrintHelper
 {
-    HANDLE _console_handle;
-    CONSOLE_CURSOR_INFO info;
+    win::HANDLE _console_handle;
+    win::CONSOLE_CURSOR_INFO info;
 
 public:
     PrintHelper()
     {
+        using namespace win;
         _console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
         info.bVisible = false;
         info.dwSize = 100;
@@ -24,7 +25,7 @@ public:
 
     void Print(Point p, char c)
     {
-        SetConsoleCursorPosition(_console_handle, { p.x , p.y });
+        win::SetConsoleCursorPosition(_console_handle, { p.x , p.y });
         std::cout.put(c);
     }
 
