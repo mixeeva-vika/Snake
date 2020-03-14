@@ -63,20 +63,31 @@ char Logic::generate_new_direction()
 
 void Logic::Run()
 {
-    int step = 0;
+    bool cond = true;
+    bool you_win = false;
+    char new_dir = 0; // новое направление, в котором движется змея
+    std::thread thr1(&Logic::threadFunction1, *this, std::ref(new_dir), std::ref(you_win));
+    std::thread thr2(&Logic::threadFunction2, *this, std::ref(new_dir), std::ref(cond));
+
+    thr1.join();
+    cond = false;
+    clear();
+    if(you_win == false)
+        pr.Print(game_over_point_position1, game_over1);
+    else
+        pr.Print(win_point_position, win);
+    pr.Print(game_over_point_position2, game_over2);
+    thr2.join();
+}
+
+void Logic::threadFunction1(char& new_dir, bool& you_win)
+{
     pr.Print(food, food_symbol);
     pr.Print(snake.Head(), snake_symbol);
     Point new_pos;
-    char new_dir;
     while (true)
     {
-        //char c = _getch();
-        if (step % 10 == 0)
-        {
-            new_dir = generate_new_direction();
-        }
         new_pos = change(snake.Head(), new_dir);
-        step++;
         std::this_thread::sleep_for(250ms);
         if (new_pos == snake.Head())
             continue;
@@ -90,6 +101,11 @@ void Logic::Run()
         if (food == new_pos)
         {
             snake.Add(new_pos);
+            if (snake.Size() == snake_size_for_win)
+            {
+                you_win = true;
+                return;
+            }
             food = generate_food_position();
             pr.Print(food, food_symbol);
         }
@@ -101,6 +117,30 @@ void Logic::Run()
         }
 
         pr.Print(new_pos, snake_symbol);
-       
+
+    }
+}
+
+void Logic::threadFunction2(char& new_dir, bool& cond)
+{
+    char c;
+    while (cond)
+    {
+        c = _getch();
+        if ((c == 'a') || (c == 'w') || (c == 'd') || (c == 's'))
+            new_dir = c;
+        else
+            continue;
+    } 
+}
+
+void Logic::clear()
+{
+    for (short i = 1; i < hight - 1; ++i)
+    {
+        for (short j = 1; j < weight - 1; ++j)
+        {
+            pr.Clear({ j, i });
+        }
     }
 }

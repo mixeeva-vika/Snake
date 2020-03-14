@@ -1,9 +1,11 @@
 #pragma once
 #include <iostream>
 #include"Point.h"
+#include <conio.h>
+#include <string>
 namespace win
 {
-#include <conio.h>
+
 #include <windows.h>
 }
 using namespace std;
@@ -27,6 +29,12 @@ public:
     {
         win::SetConsoleCursorPosition(_console_handle, { p.x , p.y });
         std::cout.put(c);
+    }
+    
+    void Print(Point p, std::string s)
+    {
+        win::SetConsoleCursorPosition(_console_handle, { p.x , p.y });
+        std::cout << s << std::endl;
     }
 
     void Clear(Point point)

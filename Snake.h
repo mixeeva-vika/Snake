@@ -14,4 +14,5 @@ public:
     void Add(Point p);
     bool PointBelongsToTheSnake(Point p);
     bool PointIsSecondElemOfSnake(Point p);
+    int Size();
 };

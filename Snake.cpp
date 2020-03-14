@@ -71,3 +71,8 @@ bool Snake::PointIsSecondElemOfSnake(Point p)
         return true;
     return false;
 }
+
+int Snake::Size()
+{
+    return points.size();
+}
