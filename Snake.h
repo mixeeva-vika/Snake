@@ -12,7 +12,9 @@ public:
     Point Tail();
     void Move(Point p);
     void Add(Point p);
+	void Cut(Point p);
     bool PointBelongsToTheSnake(Point p);
     bool PointIsSecondElemOfSnake(Point p);
     int Size();
+	std::vector<Point> CutOfTail(Point p);
 };

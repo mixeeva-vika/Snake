@@ -2,9 +2,10 @@
 #include <thread>
 #include <chrono>
 
-Logic::Logic(): snake(snake_start_position) 
+Logic::Logic(): snake(snake_start_position) , enemy(count_of_enemy)
 {
      srand(time(0));
+	 GenerateEnemyPosition();
 	 block.resize(count_of_block);
 	 for (int i = 0; i < block.size(); ++i)
 		 block[i] = { 0, 0 };
@@ -14,8 +15,7 @@ Logic::Logic(): snake(snake_start_position)
 }
 
 void Logic::DrawTheField()
-{
-    
+{ 
     for(short i = 0; i < width; ++i)
         pr.Print(Point{ i, 0 }, '-');
     for (short i = 0; i < width; ++i)
@@ -26,6 +26,8 @@ void Logic::DrawTheField()
         pr.Print(Point{ width , i }, '|');
 	for (int i = 0; i < count_of_block; ++i)
 		pr.Print(block[i], block_symbol);
+	for (int i = 0; i < count_of_enemy; ++i)
+		pr.Print(enemy.Get(i), block_symbol);
 }
 
 Point Logic::Change(Point p, char c)
@@ -76,7 +78,7 @@ Point Logic::GeneratePoint()
 	{
 		p.x = rand() % (width - 1) + 1;
 		p.y = rand() % (height - 1) + 1;
-	} while (snake.PointBelongsToTheSnake(p) && PointBelongsToTheBlock(p));
+	} while (snake.PointBelongsToTheSnake(p) && PointBelongsToTheBlock(p) && enemy.PointBelongsToTheEnemy(p));
 
 	return p;
 }
@@ -102,31 +104,58 @@ void Logic::GenerateBlockPosition()
 	    block[i] = GeneratePoint();
 }
 
+void Logic::GenerateEnemyPosition()
+{
+	for (int i = 0; i < count_of_enemy; ++i)
+		enemy.Set(GeneratePoint(), i);
+}
+
+
 char Logic::GenerateNewDirection()
 {
-    std::vector<char> v{'a','w', 'd', 's'};
+    static const std::vector<char> v{'a','w', 'd', 's'};
     int number = rand() % 4;
     return v[number];
 }
 
-void Logic::move_block(Point& p, int i)
+bool Logic::MoveEnemy(int idx)
 {
+	Point p = enemy.Get(idx);
 	char dir;
 	Point new_p;
 	while (true)
 	{
 		dir = GenerateNewDirection();
 		new_p = Change(p, dir);
-		if (new_p == food)
+		if ((new_p == food) && (PointBelongsToTheBlock(p)))
 			continue;
 		else
 		{
+			if (snake.PointBelongsToTheSnake(new_p))
+			{
+				if (new_p == snake.Head())
+					return false;
+				else
+				{
+					ClearTailOfSnake(new_p);
+				}
+			}
 			pr.Clear(p);
-			p = new_p;
-			pr.Print(p, i + '0');
-			return;
+			enemy.Set(new_p, idx);
+			pr.Print(new_p, enemy_symbol);
+			return true;
 		}
 	}
+}
+
+bool Logic::MoveAllEnemy()
+{
+	for (int i = 0; i < enemy.Size(); ++i)
+	{
+		if (MoveEnemy(i) == false)
+			return false;
+	}
+	return true;
 }
 
 void Logic::Run()
@@ -161,18 +190,8 @@ void Logic::ThreadFunction1(char& new_dir, bool& you_win)
 		/////////////////////////////////
 		if (count % 3 == 0)
 		{
-			for (int i = 0; i < count_of_block; ++i)
-			{
-				move_block(block[i], i);
-				
-				for (int j = 1; j < i; ++j)
-				{
-					if (block[i] == block[j])
-						--i;
-				}
-				
-				//move_block(block[i]);
-			}
+			if (MoveAllEnemy() == false)
+				return;
 		}
 		/////////////////////////////////
 		++count;
@@ -186,6 +205,8 @@ void Logic::ThreadFunction1(char& new_dir, bool& you_win)
                 return;
         }
 		
+		if (enemy.PointBelongsToTheEnemy(new_pos))
+			return;
 
         if (food == new_pos)
         {
@@ -225,12 +246,18 @@ void Logic::ThreadFunction2(char& new_dir, bool& cond)
 
 void Logic::Clear()
 {
-    for (short i = 1; i < height - 1; ++i)
+    for (short i = 1; i < height; ++i)
     {
-        for (short j = 1; j < width - 1; ++j)
+        for (short j = 1; j < width; ++j)
         {
             pr.Clear({ j, i });
         }
     }
 }
 
+void Logic::ClearTailOfSnake(Point p)
+{
+	std::vector<Point> remove_points = snake.CutOfTail(p);
+	for (int i = 0; i < remove_points.size(); ++i)
+		pr.Clear(remove_points[i]);
+}

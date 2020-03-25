@@ -55,6 +55,11 @@ void Snake::Add(Point p)
     points.emplace(points.begin(), p);
 }
 
+void Snake::Cut(Point p)
+{
+	return;
+}
+
 bool Snake::PointBelongsToTheSnake(Point p)
 {
     for (int i = 0; i < points.size(); ++i)
@@ -74,5 +79,24 @@ bool Snake::PointIsSecondElemOfSnake(Point p)
 
 int Snake::Size()
 {
-    return points.size();
+    return (int)points.size();
+}
+
+std::vector<Point> Snake::CutOfTail(Point p)
+{
+	int start_idx = 0;
+	int snake_size = points.size();
+	while ((start_idx < snake_size) && !(points[start_idx] == p))
+	{
+		++start_idx;
+	}
+	assert(start_idx < snake_size);
+	std::vector<Point> tail(snake_size - start_idx);
+	for (int j = 0; j < tail.size(); ++j)
+	{
+		tail[j] = points[start_idx + j];
+	}
+	points.resize(start_idx);
+
+	return tail;
 }
