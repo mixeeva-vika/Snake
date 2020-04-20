@@ -1,6 +1,9 @@
 #include"Logic.h"
 #include <thread>
 #include <chrono>
+#include <queue>
+#include <fstream>
+#include <assert.h>
 
 Logic::Logic(): snake(snake_start_position) , enemy(count_of_enemy)
 {
@@ -27,11 +30,12 @@ void Logic::DrawTheField()
 	for (int i = 0; i < count_of_block; ++i)
 		pr.Print(block[i], block_symbol);
 	for (int i = 0; i < count_of_enemy; ++i)
-		pr.Print(enemy.Get(i), block_symbol);
+		pr.Print(enemy.Get(i), enemy_symbol);
 }
 
 Point Logic::Change(Point p, char c)
 {
+	Point old_p = p;
     if (c == 'a')
     {
 		bool a = PointBelongsToTheBlock({ p.x - 1, p.y });
@@ -68,6 +72,7 @@ Point Logic::Change(Point p, char c)
 		}
 		p.y += ((p.y == (height - 1)) || (PointBelongsToTheBlock({ p.x, p.y + 1 }))) ? 0 : 1;
 	}
+	
     return p;
 }
 
@@ -107,7 +112,15 @@ void Logic::GenerateBlockPosition()
 void Logic::GenerateEnemyPosition()
 {
 	for (int i = 0; i < count_of_enemy; ++i)
-		enemy.Set(GeneratePoint(), i);
+	{
+		Point new_pos;
+		do
+		{
+			new_pos = GeneratePoint();
+		} while (DistanceBetweenPoints(new_pos, snake_start_position) < 5);
+		
+		enemy.Set(new_pos, i);
+	}
 }
 
 
@@ -123,11 +136,19 @@ bool Logic::MoveEnemy(int idx)
 	Point p = enemy.Get(idx);
 	char dir;
 	Point new_p;
+	int step = rand() % 10;
 	while (true)
 	{
-		dir = GenerateNewDirection();
-		new_p = Change(p, dir);
-		if ((new_p == food) && (PointBelongsToTheBlock(p)))
+		
+		if (step < 8)
+		{
+			dir = GenerateNewDirection();
+			new_p = Change(p, dir);
+		}
+		else
+			new_p = ShortestDirectionTowardsTheSnake(p);
+			
+		if ((new_p == food) || (PointBelongsToTheBlock(new_p)) || (PointBelongsToTheBlock(new_p)))
 			continue;
 		else
 		{
@@ -141,6 +162,8 @@ bool Logic::MoveEnemy(int idx)
 				}
 			}
 			pr.Clear(p);
+			
+			//assert(DistanceBetweenPoints(p, new_p) == 1);
 			enemy.Set(new_p, idx);
 			pr.Print(new_p, enemy_symbol);
 			return true;
@@ -156,6 +179,11 @@ bool Logic::MoveAllEnemy()
 			return false;
 	}
 	return true;
+}
+
+int Logic::DistanceBetweenPoints(Point a, Point b)
+{
+	return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
 void Logic::Run()
@@ -188,7 +216,7 @@ void Logic::ThreadFunction1(char& new_dir, bool& you_win)
         new_pos = Change(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
 		/////////////////////////////////
-		if (count % 3 == 0)
+		if ((count % 3 == 0) && (new_dir != 0))
 		{
 			if (MoveAllEnemy() == false)
 				return;
@@ -261,3 +289,180 @@ void Logic::ClearTailOfSnake(Point p)
 	for (int i = 0; i < remove_points.size(); ++i)
 		pr.Clear(remove_points[i]);
 }
+
+Point Logic::ShortestDirectionTowardsTheSnake(Point enemy_point)
+{
+	std::vector<std::vector<int>> lenght(height);
+	for (int i = 0; i < height; ++i)
+		lenght[i].resize(width, -3);
+	for (short i = 0; i < height; ++i)
+	{
+		for (short j = 0; j < width; ++j)
+		{
+			if (PointBelongsToTheBlock({ j, i }) || (Point{j, i} == food))
+				lenght[i][j] = -1;
+			if (snake.PointBelongsToTheSnake({ j, i }))
+				lenght[i][j] = -2;
+			bool left = (enemy_point.x - 1 > 0)&&(enemy.PointBelongsToTheEnemy({ enemy_point.x - 1 , enemy_point.y }));
+			bool right = (enemy_point.x + 1 < width) && (enemy.PointBelongsToTheEnemy({ enemy_point.x + 1 , enemy_point.y }));
+			bool up = (enemy_point.y + 1 < height) && (enemy.PointBelongsToTheEnemy({ enemy_point.x  , enemy_point.y + 1}));
+			bool down = (enemy_point.y - 1 > 0) && (enemy.PointBelongsToTheEnemy({ enemy_point.x , enemy_point.y - 1}));
+			if(left)
+				lenght[enemy_point.y][enemy_point.x - 1] = -1;
+			if(right)
+				lenght[enemy_point.y][enemy_point.x + 1] = -1;
+			if(up)
+				lenght[enemy_point.y + 1][enemy_point.x] = -1;
+			if(down)
+				lenght[enemy_point.y - 1][enemy_point.x] = -1;
+		}
+	}
+
+	ofstream file; // создаем объект класса ifstream
+	file.open("output.txt"); // открываем файл
+	if (!file)
+	{
+		std::cout << "Error with file" << std::endl;
+	}
+	file << "enemy_point: " << enemy_point.x << " " << enemy_point.y << endl;
+	queue<Point> q; // создаем очередь
+	q.push(enemy_point); // добавляем первый элемент в очередь(позиция врага в данный момент)
+	lenght[enemy_point.y][enemy_point.x] = 0;
+	while (!q.empty())
+	{
+		
+		Point tmp = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
+		int cur_len = lenght[tmp.y][tmp.x] + 1;
+		q.pop();  // Удаляем первый элемент в очереди
+		bool left = (tmp.x - 1 > 0) && (lenght[tmp.y][tmp.x - 1] != -1);
+		bool right = (tmp.x + 1 < width) && (lenght[tmp.y][tmp.x + 1] != -1);
+		bool up = (tmp.y + 1 < height) && (lenght[tmp.y + 1][tmp.x] != -1);
+		bool down = (tmp.y - 1 > 0) && (lenght[tmp.y - 1][tmp.x] != -1);
+		if ((left) && (lenght[tmp.y][tmp.x - 1] == -2) ||
+			(right) && (lenght[tmp.y][tmp.x + 1] == -2) ||
+			(up) && (lenght[tmp.y + 1][tmp.x] == -2) ||
+			(down) && (lenght[tmp.y - 1][tmp.x] == -2))
+		{
+			if ((tmp.x == enemy_point.x) && (tmp.y == enemy_point.y))
+			{
+				if ((left) && (lenght[tmp.y][tmp.x - 1] == -2))
+					return Point{ tmp.x - 1, tmp.y};
+				if ((right) && (lenght[tmp.y][tmp.x + 1] == -2))
+					return Point{ tmp.x + 1, tmp.y };
+				if ((up) && (lenght[tmp.y + 1][tmp.x] == -2))
+					return Point{ tmp.x, tmp.y + 1};
+				if ((down) && (lenght[tmp.y - 1][tmp.x] == -2))
+					return Point{ tmp.x, tmp.y - 1};
+			}
+			int len = lenght[tmp.y][tmp.x] - 1;
+			Point cur = tmp;
+			file << "tmp: " << tmp.x << " "<< tmp.y << endl;
+			
+			while (len != 0)
+			{
+				bool left_ = (cur.x - 1 > 0) && (lenght[cur.y][cur.x - 1] != -1);
+				bool right_ = (cur.x + 1 < width) && (lenght[cur.y][cur.x + 1] != -1);
+				bool up_ = (cur.y + 1 < height) && (lenght[cur.y + 1][cur.x] != -1);
+				bool down_ = (cur.y - 1 > 0) && (lenght[cur.y - 1][cur.x] != -1);
+
+				file << "len_: " << len << endl;	
+				if ((left_) && (len == lenght[cur.y][cur.x - 1]))
+				{
+					cur = { cur.x - 1 , cur.y };
+				}
+				else if ((right_) && (len == lenght[cur.y][cur.x + 1]))
+				{
+					cur = { cur.x + 1 , cur.y };
+				}
+				else if ((up_) && (len == lenght[cur.y + 1][cur.x]))
+				{
+					cur = { cur.x , cur.y + 1 };
+				}
+				else if ((down_) && (len == lenght[cur.y - 1][cur.x]))
+				{
+					cur = { cur.x , cur.y - 1 };
+				}
+				else
+					throw " Error! No way";
+
+				assert((cur.x != enemy_point.x)||(cur.y != enemy_point.y));
+				if ((cur.x < 0) || (cur.y < 0))
+				{
+					int b = 0;
+				}
+				file << " x :" << cur.x << " y: " << cur.y << endl;
+				file << endl;
+				--len;
+			}
+			
+			/////////////////////////////////////////////////////////////////////////
+			/*
+		    for (int i = 0; i < lenght.size(); ++i)
+			{
+				for (int j = 0; j < lenght[i].size(); ++j)
+				{
+					if (lenght[i][j] == -3)
+					{
+						file << " _ ";
+					}
+					else if (lenght[i][j] == -1)
+					{
+						file << " " << block_symbol << " ";
+					}
+					else if (lenght[i][j] == -2)
+					{
+						file << " " << snake_symbol << " ";
+					}
+					else
+					{
+						if (lenght[i][j] < 10)
+							file << " " << lenght[i][j] << " ";
+						else if (lenght[i][j] >= 10)
+							file << " " << lenght[i][j];
+					}
+					//file << lenght[i][j] << " ";
+				}
+				file << std::endl;
+			}
+			/////////////////////////////////////////////////////////////////////////
+			file <<"cur " << cur.x << cur.y << std::endl;
+			
+			if (cur == enemy_point)
+			{
+				int a = 0;
+				file << "cur == enemy_point" << endl;
+			}
+			*/
+			file.close();
+			return cur;
+		}
+
+		if ((left) && (lenght[tmp.y][tmp.x - 1] == -3))
+		{
+			lenght[tmp.y][tmp.x - 1] = cur_len;
+			//pr.Print(Point{ tmp.x - 1 , tmp.y }, '0' + cur_len);
+			q.push({ tmp.x - 1 , tmp.y });
+		}
+		if ((right) && (lenght[tmp.y][tmp.x + 1] == -3))
+		{
+			lenght[tmp.y][tmp.x + 1] = cur_len;
+			//pr.Print(Point{ tmp.x + 1 , tmp.y }, '0' + cur_len);
+			q.push({ tmp.x + 1, tmp.y });
+		}
+		if ((up) && (lenght[tmp.y + 1][tmp.x] == -3))
+		{
+			lenght[tmp.y + 1][tmp.x] = cur_len;
+			//pr.Print(Point{ tmp.x, tmp.y + 1 }, '0' + cur_len);
+			q.push({ tmp.x, tmp.y + 1});
+		}
+		if ((down) && (lenght[tmp.y - 1][tmp.x] == -3))
+		{
+			lenght[tmp.y - 1][tmp.x] = cur_len;
+			//pr.Print(Point{ tmp.x , tmp.y - 1}, '0' + cur_len);
+			q.push({ tmp.x, tmp.y - 1 });
+		}
+		
+
+	}	
+}
+
