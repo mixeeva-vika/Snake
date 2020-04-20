@@ -11,7 +11,7 @@ class Logic
     const char snake_symbol = 219;
     const char food_symbol = '*';
 	const char enemy_symbol = 197;
-    const Point snake_start_position{ 10, 10 };
+    const Point snake_start_position{ 44, 10 };
     const Point game_over_point_position1{ width / 2 - 5, height / 2 };
     const string game_over1 = "Game Over";
     const Point game_over_point_position2{ width / 2 - 9, height /2 + 2};
@@ -44,6 +44,8 @@ class Logic
     void ThreadFunction2(char& new_dir, bool& cond);/////////////////////////
     void Clear();
 	void ClearTailOfSnake(Point p);
+	int DistanceBetweenPoints(Point a, Point b);
+	Point ShortestDirectionTowardsTheSnake(Point enemy);
 public:
     Logic();
     void Run();
