@@ -30,3 +30,8 @@ void Enemy::Set(Point p, int idx)
 {
 	points[idx] = p;
 }
+
+const std::vector<Point>& Enemy::GetPoints()
+{
+	return points;
+}

@@ -2,11 +2,12 @@
 #include"PrintHelper.h"
 #include"Logic.h"
 #include"Snake.h"
+#include "Level.h"
 #include <thread>
 
 int main()
 {
-    Logic log;
-    log.Run();
+	Level lev;
+	lev.Levels();
     return 0;
 }

@@ -12,5 +12,5 @@ public:
 	Point Get(int idx);
 	int Size();
 	void Set(Point p, int idx);
-
+	const std::vector<Point>& GetPoints();
 };

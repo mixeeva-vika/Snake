@@ -5,7 +5,12 @@
 #include <fstream>
 #include <assert.h>
 
-Logic::Logic(): snake(snake_start_position) , enemy(count_of_enemy)
+Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_):
+	snake(snake_start_position) , 
+    count_of_enemy(count_of_enemy_), 
+	count_of_block(count_of_block_),
+	power_of_brean_of_enemy(power_of_brean_of_enemy_),
+	enemy(count_of_enemy)
 {
      srand(time(0));
 	 GenerateEnemyPosition();
@@ -15,6 +20,11 @@ Logic::Logic(): snake(snake_start_position) , enemy(count_of_enemy)
 	 GenerateBlockPosition();
      DrawTheField();
      food = GenerateFoodPosition();
+}
+
+Logic::~Logic()
+{
+	Clear();
 }
 
 void Logic::DrawTheField()
@@ -83,7 +93,7 @@ Point Logic::GeneratePoint()
 	{
 		p.x = rand() % (width - 1) + 1;
 		p.y = rand() % (height - 1) + 1;
-	} while (snake.PointBelongsToTheSnake(p) && PointBelongsToTheBlock(p) && enemy.PointBelongsToTheEnemy(p));
+	} while (snake.PointBelongsToTheSnake(p) || PointBelongsToTheBlock(p) || enemy.PointBelongsToTheEnemy(p));
 
 	return p;
 }
@@ -118,7 +128,10 @@ void Logic::GenerateEnemyPosition()
 		{
 			new_pos = GeneratePoint();
 		} while (DistanceBetweenPoints(new_pos, snake_start_position) < 5);
-		
+		for (int j = 0; j < i; ++j)
+		{
+			assert(!(new_pos == enemy.Get(i)));
+		}
 		enemy.Set(new_pos, i);
 	}
 }
@@ -131,23 +144,24 @@ char Logic::GenerateNewDirection()
     return v[number];
 }
 
-bool Logic::MoveEnemy(int idx)
+bool Logic::MoveEnemy(int idx, Point smart_point)
 {
 	Point p = enemy.Get(idx);
 	char dir;
 	Point new_p;
 	int step = rand() % 10;
+	
 	while (true)
 	{
-		
-		if (step < 8)
+		//dir = GenerateNewDirection();
+		//new_p = Change(p, dir);
+		if (step > power_of_brean_of_enemy)
 		{
 			dir = GenerateNewDirection();
 			new_p = Change(p, dir);
 		}
 		else
-			new_p = ShortestDirectionTowardsTheSnake(p);
-			
+			new_p = smart_point;	
 		if ((new_p == food) || (PointBelongsToTheBlock(new_p)) || (PointBelongsToTheBlock(new_p)))
 			continue;
 		else
@@ -173,9 +187,10 @@ bool Logic::MoveEnemy(int idx)
 
 bool Logic::MoveAllEnemy()
 {
+	std::vector<Point> smart_position = ShortestDirectionTowardsTheSnake();
 	for (int i = 0; i < enemy.Size(); ++i)
 	{
-		if (MoveEnemy(i) == false)
+		if (MoveEnemy(i, smart_position[i]) == false)
 			return false;
 	}
 	return true;
@@ -186,7 +201,7 @@ int Logic::DistanceBetweenPoints(Point a, Point b)
 	return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-void Logic::Run()
+bool Logic::Run()
 {
     bool cond = true;
     bool you_win = false;
@@ -198,11 +213,12 @@ void Logic::Run()
     cond = false;
     Clear();
     if(you_win == false)
-        pr.Print(game_over_point_position1, game_over1);
+        pr.Print(game_over_point_position1, game_over1);////нужно сообщить Level
     else
-        pr.Print(win_point_position, win);
-    pr.Print(game_over_point_position2, game_over2);
+        pr.Print(win_point_position, win);////нужно сообщить Level
+    pr.Print(game_over_point_position2, game_);
     thr2.join();
+	return you_win;
 }
 
 void Logic::ThreadFunction1(char& new_dir, bool& you_win)
@@ -218,6 +234,19 @@ void Logic::ThreadFunction1(char& new_dir, bool& you_win)
 		/////////////////////////////////
 		if ((count % 3 == 0) && (new_dir != 0))
 		{
+			pr.Print({ 0 ,height + 1}, '!');
+			for (int i = 0; i < count_of_enemy; ++i)
+			{
+				Point cur_enemy = enemy.Get(i);
+				//Point cur_enemy = enemy.Get(i);
+				std::cout << '{' << cur_enemy.x <<' '<< cur_enemy.y<< '}' << "  ";
+				
+				for (int j = 0; j < i; ++j)
+				{
+					assert(!(enemy.Get(j) == cur_enemy));
+				}
+			}
+			std::cout << endl;
 			if (MoveAllEnemy() == false)
 				return;
 		}
@@ -466,3 +495,88 @@ Point Logic::ShortestDirectionTowardsTheSnake(Point enemy_point)
 	}	
 }
 
+bool Logic::PointInsideTheField(Point p)
+{
+	bool left = (p.x > 0);
+	bool right = (p.x < width);
+	bool up = (p.y  < height);
+	bool down = (p.y > 0);
+	if (left && right && up && down)
+		return true;
+	return false;
+}
+
+ std::vector<Point> Logic::ShortestDirectionTowardsTheSnake()
+{
+	std::vector<Point> enemys = enemy.GetPoints();
+	queue<Point> q; // создаем очередь
+	std::vector<Point> res(enemys.size(), Point{ 0,0 });
+	std::vector<Point> offset_points = { {1,0}, {-1,0}, {0,1}, {0,-1} };
+	int count = 0;
+	std::vector<std::vector<int>> lenght(height);
+	for (int i = 0; i < height; ++i)
+		lenght[i].resize(width, -3);
+
+	for (short i = 0; i < height; ++i)
+	{
+		for (short j = 0; j < width; ++j)
+		{
+			if (PointBelongsToTheBlock({ j, i }) || (Point{ j, i } == food))
+				lenght[i][j] = -1;
+			if (snake.PointBelongsToTheSnake({ j, i }))
+			{
+				lenght[i][j] = 0;
+				q.push(Point{ j, i});
+			}
+			
+		}
+	}
+	pr.Print({ 0 ,height + 5 }, '!');
+	for (int i = 0; i < count_of_enemy; ++i)
+	{
+		Point cur_enemy = enemy.Get(i);
+		std::cout << '{' << cur_enemy.x << ' ' << cur_enemy.y << '}' << "  ";
+	}
+	std::cout << endl;
+	for (int i = 0; i < enemys.size(); ++i)
+	{
+		assert(lenght[enemys[i].y][enemys[i].x] == -3);
+		lenght[enemys[i].y][enemys[i].x] = -10 - i;
+	}
+	
+	while (!q.empty())
+	{
+		Point tmp = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
+		int cur_len = lenght[tmp.y][tmp.x] + 1;
+		q.pop();  // Удаляем первый элемент в очереди
+		for (int i = 0; i < offset_points.size(); ++i)
+		{
+			Point cur_neighbor = tmp + offset_points[i];
+			if (!PointInsideTheField(cur_neighbor))
+				continue;
+			int& neighbor_len = lenght[cur_neighbor.y][cur_neighbor.x];
+			if (neighbor_len == -1)
+				continue;
+			if (neighbor_len <= -10)
+			{
+				int idx = fabs(neighbor_len + 10);
+				if ((res[idx].x == 0) && (res[idx].y == 0))
+				{
+					res[idx] = tmp;
+					neighbor_len = -1;
+					++count;
+					//if (count == res.size())
+					//	return res;
+				}
+				continue;
+			}
+			if (neighbor_len == -3)
+			{
+				neighbor_len = cur_len;
+				pr.Print(Point{ cur_neighbor.x , cur_neighbor.y }, '0' + cur_len);
+				q.push({ cur_neighbor.x , cur_neighbor.y });
+			}
+		}
+	}
+	return res;
+}
