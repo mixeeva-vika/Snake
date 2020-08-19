@@ -9,7 +9,7 @@ void Level::Levels()
 {
 	for (int i = 0; i < count_of_levels; ++i)
 	{
-		Logic l(30, i, i, i);
+		Logic l(10 + i, i, i, i);
 		if (l.Run() == false)
 			return;
 	}

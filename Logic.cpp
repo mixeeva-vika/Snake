@@ -130,7 +130,7 @@ void Logic::GenerateEnemyPosition()
 		} while (DistanceBetweenPoints(new_pos, snake_start_position) < 5);
 		for (int j = 0; j < i; ++j)
 		{
-			assert(!(new_pos == enemy.Get(i)));
+			assert(!(new_pos == enemy.Get(j)));
 		}
 		enemy.Set(new_pos, i);
 	}
@@ -149,20 +149,21 @@ bool Logic::MoveEnemy(int idx, Point smart_point)
 	Point p = enemy.Get(idx);
 	char dir;
 	Point new_p;
-	int step = rand() % 10;
 	
 	while (true)
 	{
 		//dir = GenerateNewDirection();
 		//new_p = Change(p, dir);
-		if (step > power_of_brean_of_enemy)
+		int step = rand() % 10;
+		if ((step > power_of_brean_of_enemy) || (smart_point == Point{0,0}))
 		{
 			dir = GenerateNewDirection();
 			new_p = Change(p, dir);
 		}
 		else
+
 			new_p = smart_point;	
-		if ((new_p == food) || (PointBelongsToTheBlock(new_p)) || (PointBelongsToTheBlock(new_p)))
+		if ((new_p == food) || (PointBelongsToTheBlock(new_p)) || (enemy.PointBelongsToTheEnemy(new_p)))
 			continue;
 		else
 		{
@@ -234,12 +235,12 @@ void Logic::ThreadFunction1(char& new_dir, bool& you_win)
 		/////////////////////////////////
 		if ((count % 3 == 0) && (new_dir != 0))
 		{
-			pr.Print({ 0 ,height + 1}, '!');
+			//pr.Print({ 0 ,height + 1}, '!');
 			for (int i = 0; i < count_of_enemy; ++i)
 			{
 				Point cur_enemy = enemy.Get(i);
 				//Point cur_enemy = enemy.Get(i);
-				std::cout << '{' << cur_enemy.x <<' '<< cur_enemy.y<< '}' << "  ";
+				//std::cout << '{' << cur_enemy.x <<' '<< cur_enemy.y<< '}' << "  ";
 				
 				for (int j = 0; j < i; ++j)
 				{
@@ -509,6 +510,7 @@ bool Logic::PointInsideTheField(Point p)
  std::vector<Point> Logic::ShortestDirectionTowardsTheSnake()
 {
 	std::vector<Point> enemys = enemy.GetPoints();
+	std::vector<Point> snake_ = snake.GetPoints();
 	queue<Point> q; // создаем очередь
 	std::vector<Point> res(enemys.size(), Point{ 0,0 });
 	std::vector<Point> offset_points = { {1,0}, {-1,0}, {0,1}, {0,-1} };
@@ -517,27 +519,24 @@ bool Logic::PointInsideTheField(Point p)
 	for (int i = 0; i < height; ++i)
 		lenght[i].resize(width, -3);
 
-	for (short i = 0; i < height; ++i)
+	lenght[food.y][food.x] = -1;
+	for (short i = 0; i < block.size(); ++i)
 	{
-		for (short j = 0; j < width; ++j)
-		{
-			if (PointBelongsToTheBlock({ j, i }) || (Point{ j, i } == food))
-				lenght[i][j] = -1;
-			if (snake.PointBelongsToTheSnake({ j, i }))
-			{
-				lenght[i][j] = 0;
-				q.push(Point{ j, i});
-			}
-			
-		}
+		lenght[block[i].y][block[i].x] = -1;
 	}
-	pr.Print({ 0 ,height + 5 }, '!');
+	for (short i = 0; i < snake.Size(); ++i)
+	{
+		lenght[snake_[i].y][snake_[i].x] = 0;
+		q.push(snake_[i]);
+	}
+	//pr.Print({ 0 ,height + 5 }, '!');
+	
 	for (int i = 0; i < count_of_enemy; ++i)
 	{
 		Point cur_enemy = enemy.Get(i);
-		std::cout << '{' << cur_enemy.x << ' ' << cur_enemy.y << '}' << "  ";
+		//std::cout << '{' << cur_enemy.x << ' ' << cur_enemy.y << '}' << "  ";
 	}
-	std::cout << endl;
+	//std::cout << endl;
 	for (int i = 0; i < enemys.size(); ++i)
 	{
 		assert(lenght[enemys[i].y][enemys[i].x] == -3);
@@ -549,6 +548,7 @@ bool Logic::PointInsideTheField(Point p)
 		Point tmp = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
 		int cur_len = lenght[tmp.y][tmp.x] + 1;
 		q.pop();  // Удаляем первый элемент в очереди
+		bool is_first_enemy = true;
 		for (int i = 0; i < offset_points.size(); ++i)
 		{
 			Point cur_neighbor = tmp + offset_points[i];
@@ -557,11 +557,12 @@ bool Logic::PointInsideTheField(Point p)
 			int& neighbor_len = lenght[cur_neighbor.y][cur_neighbor.x];
 			if (neighbor_len == -1)
 				continue;
-			if (neighbor_len <= -10)
+			if ((neighbor_len <= -10)&&(is_first_enemy))
 			{
 				int idx = fabs(neighbor_len + 10);
 				if ((res[idx].x == 0) && (res[idx].y == 0))
 				{
+					is_first_enemy = false;
 					res[idx] = tmp;
 					neighbor_len = -1;
 					++count;
@@ -573,10 +574,19 @@ bool Logic::PointInsideTheField(Point p)
 			if (neighbor_len == -3)
 			{
 				neighbor_len = cur_len;
-				pr.Print(Point{ cur_neighbor.x , cur_neighbor.y }, '0' + cur_len);
+				//pr.Print(Point{ cur_neighbor.x , cur_neighbor.y }, '0' + cur_len);
 				q.push({ cur_neighbor.x , cur_neighbor.y });
 			}
 		}
+	}
+	Point zero = Point{ 0, 0 };
+	for (int i = 0; i < res.size(); ++i)
+	{
+		if (res[i] == zero)
+		{
+			int a = 0;
+		}
+
 	}
 	return res;
 }

@@ -100,3 +100,8 @@ std::vector<Point> Snake::CutOfTail(Point p)
 
 	return tail;
 }
+
+const std::vector<Point>& Snake::GetPoints()
+{
+	return points;
+}

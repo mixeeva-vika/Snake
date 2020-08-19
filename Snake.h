@@ -17,4 +17,5 @@ public:
     bool PointIsSecondElemOfSnake(Point p);
     int Size();
 	std::vector<Point> CutOfTail(Point p);
+	const std::vector<Point>& GetPoints();
 };
