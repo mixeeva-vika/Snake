@@ -28,6 +28,7 @@ class Logic
 	const char block_symbol = 186;
 	int count_of_enemy;
 	int power_of_brean_of_enemy;
+	std::vector<Point> offset_points = { { 1,0 },{ -1,0 },{ 0,1 },{ 0,-1 } };
 
     Snake snake;
 	Enemy enemy;
@@ -43,6 +44,7 @@ class Logic
 	bool PointBelongsToTheBlock(Point p);
     void DrawTheField();
     char GenerateNewDirection();
+	Point NewEnemyPosition(Point enemy_coordinates, Point smart_point);
 	bool MoveEnemy(int idx, Point smart_point);
 	bool MoveAllEnemy();
     void ThreadFunction1(char& new_dir, bool& you_win);///////////////////////

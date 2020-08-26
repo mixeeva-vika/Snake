@@ -144,46 +144,52 @@ char Logic::GenerateNewDirection()
     return v[number];
 }
 
-bool Logic::MoveEnemy(int idx, Point smart_point)
+Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 {
-	Point p = enemy.Get(idx);
-	char dir;
-	Point new_p;
+	assert(!(smart_point == food));
+	assert(!PointBelongsToTheBlock(smart_point));
+	assert(PointInsideTheField(smart_point));
 	
-	while (true)
+	bool smart_point_is_correct = ((!(smart_point == Point{ 0,0 })) && (!enemy.PointBelongsToTheEnemy(smart_point)));
+	int step = rand() % 10;
+	if (smart_point_is_correct && (step <= power_of_brean_of_enemy))
 	{
-		//dir = GenerateNewDirection();
-		//new_p = Change(p, dir);
-		int step = rand() % 10;
-		if ((step > power_of_brean_of_enemy) || (smart_point == Point{0,0}))
-		{
-			dir = GenerateNewDirection();
-			new_p = Change(p, dir);
-		}
-		else
-
-			new_p = smart_point;	
-		if ((new_p == food) || (PointBelongsToTheBlock(new_p)) || (enemy.PointBelongsToTheEnemy(new_p)))
-			continue;
-		else
-		{
-			if (snake.PointBelongsToTheSnake(new_p))
-			{
-				if (new_p == snake.Head())
-					return false;
-				else
-				{
-					ClearTailOfSnake(new_p);
-				}
-			}
-			pr.Clear(p);
-			
-			//assert(DistanceBetweenPoints(p, new_p) == 1);
-			enemy.Set(new_p, idx);
-			pr.Print(new_p, enemy_symbol);
-			return true;
-		}
+		return smart_point;
 	}
+	
+	int new_direction = rand() % 4;
+	for (int i = 0; i < 4; ++i)
+	{
+		Point new_enemy_coordinates = enemy_coordinates + offset_points[new_direction];
+		if ((PointInsideTheField(new_enemy_coordinates)) && (!(new_enemy_coordinates == food)) &&
+			(!PointBelongsToTheBlock(new_enemy_coordinates)) && (!enemy.PointBelongsToTheEnemy(new_enemy_coordinates)))
+		{
+			return new_enemy_coordinates;
+		}
+
+		new_direction = (new_direction + 1) % 4;	
+	}
+	return enemy_coordinates;
+}
+
+bool Logic::MoveEnemy(int enemy_idx, Point smart_point) 
+{
+	Point enemy_coordinates = enemy.Get(enemy_idx);
+	Point new_enemy_coordinates = NewEnemyPosition(enemy_coordinates, smart_point);
+	
+	if (snake.PointBelongsToTheSnake(new_enemy_coordinates))
+	{
+		if (new_enemy_coordinates == snake.Head())
+			return false;
+		else
+			ClearTailOfSnake(new_enemy_coordinates);
+	}
+	pr.Clear(enemy_coordinates);
+			
+	//assert(DistanceBetweenPoints(enemy_coordinates, new_enemy_coordinates) == 1);
+	enemy.Set(new_enemy_coordinates, enemy_idx);
+	pr.Print(new_enemy_coordinates, enemy_symbol);
+	return true;
 }
 
 bool Logic::MoveAllEnemy()
@@ -510,52 +516,48 @@ bool Logic::PointInsideTheField(Point p)
  std::vector<Point> Logic::ShortestDirectionTowardsTheSnake()
 {
 	std::vector<Point> enemys = enemy.GetPoints();
-	std::vector<Point> snake_ = snake.GetPoints();
-	queue<Point> q; // создаем очередь
+	std::vector<Point> snake_points = snake.GetPoints();
+	queue<Point> q; 
 	std::vector<Point> res(enemys.size(), Point{ 0,0 });
-	std::vector<Point> offset_points = { {1,0}, {-1,0}, {0,1}, {0,-1} };
 	int count = 0;
+	int snake_place = 0;
+	int block_place = -1;
+	int free_place = -3;
+
 	std::vector<std::vector<int>> lenght(height);
 	for (int i = 0; i < height; ++i)
-		lenght[i].resize(width, -3);
+		lenght[i].resize(width, free_place);
 
-	lenght[food.y][food.x] = -1;
+	lenght[food.y][food.x] = block_place;
 	for (short i = 0; i < block.size(); ++i)
 	{
-		lenght[block[i].y][block[i].x] = -1;
+		lenght[block[i].y][block[i].x] = block_place;
 	}
 	for (short i = 0; i < snake.Size(); ++i)
 	{
-		lenght[snake_[i].y][snake_[i].x] = 0;
-		q.push(snake_[i]);
+		lenght[snake_points[i].y][snake_points[i].x] = snake_place;
+		q.push(snake_points[i]);
 	}
-	//pr.Print({ 0 ,height + 5 }, '!');
 	
-	for (int i = 0; i < count_of_enemy; ++i)
-	{
-		Point cur_enemy = enemy.Get(i);
-		//std::cout << '{' << cur_enemy.x << ' ' << cur_enemy.y << '}' << "  ";
-	}
-	//std::cout << endl;
 	for (int i = 0; i < enemys.size(); ++i)
 	{
-		assert(lenght[enemys[i].y][enemys[i].x] == -3);
+		assert(lenght[enemys[i].y][enemys[i].x] == free_place);
 		lenght[enemys[i].y][enemys[i].x] = -10 - i;
 	}
 	
 	while (!q.empty())
 	{
-		Point tmp = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
-		int cur_len = lenght[tmp.y][tmp.x] + 1;
+		Point current_point = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
+		int cur_len = lenght[current_point.y][current_point.x] + 1;
 		q.pop();  // Удаляем первый элемент в очереди
 		bool is_first_enemy = true;
 		for (int i = 0; i < offset_points.size(); ++i)
 		{
-			Point cur_neighbor = tmp + offset_points[i];
+			Point cur_neighbor = current_point + offset_points[i];
 			if (!PointInsideTheField(cur_neighbor))
 				continue;
 			int& neighbor_len = lenght[cur_neighbor.y][cur_neighbor.x];
-			if (neighbor_len == -1)
+			if (neighbor_len == block_place)
 				continue;
 			if ((neighbor_len <= -10)&&(is_first_enemy))
 			{
@@ -563,15 +565,20 @@ bool Logic::PointInsideTheField(Point p)
 				if ((res[idx].x == 0) && (res[idx].y == 0))
 				{
 					is_first_enemy = false;
-					res[idx] = tmp;
-					neighbor_len = -1;
+					//////////////////////
+					assert(!(current_point == food));
+					assert(!PointBelongsToTheBlock(current_point));
+					assert(!enemy.PointBelongsToTheEnemy(current_point));
+					//////////////////////
+					res[idx] = current_point;
+					neighbor_len = block_place;
 					++count;
 					//if (count == res.size())
 					//	return res;
 				}
 				continue;
 			}
-			if (neighbor_len == -3)
+			if (neighbor_len == free_place)
 			{
 				neighbor_len = cur_len;
 				//pr.Print(Point{ cur_neighbor.x , cur_neighbor.y }, '0' + cur_len);
