@@ -15,11 +15,7 @@ Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_
      srand(time(0));
 	 GenerateEnemyPosition();
 	 block.resize(count_of_block);
-	 for (int i = 0; i < block.size(); ++i)
-		 block[i] = { 0, 0 };
-	 GenerateBlockPosition();
-     DrawTheField();
-     food = GenerateFoodPosition();
+	 
 }
 
 Logic::~Logic()
@@ -210,6 +206,10 @@ int Logic::DistanceBetweenPoints(Point a, Point b)
 
 bool Logic::Run()
 {
+	Clear();
+	GenerateBlockPosition();
+	DrawTheField();
+	food = GenerateFoodPosition();
     bool cond = true;
     bool you_win = false;
     char new_dir = 0; // новое направление, в котором движется змея
@@ -220,10 +220,11 @@ bool Logic::Run()
     cond = false;
     Clear();
     if(you_win == false)
-        pr.Print(game_over_point_position1, game_over1);////нужно сообщить Level
-    else
+        pr.Print(level_over_point_position1, level_over1);////нужно сообщить Level
+	/////////////////////////
+   else
         pr.Print(win_point_position, win);////нужно сообщить Level
-    pr.Print(game_over_point_position2, game_);
+    pr.Print(game_over_point_position2, press_enter);
     thr2.join();
 	return you_win;
 }
@@ -236,6 +237,11 @@ void Logic::ThreadFunction1(char& new_dir, bool& you_win)
 	int count = 1;
     while (true)
     {
+		if (new_dir == 'n')
+		{
+			you_win = true;
+			return;
+		}
         new_pos = Change(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
 		/////////////////////////////////
@@ -301,7 +307,7 @@ void Logic::ThreadFunction2(char& new_dir, bool& cond)
     while (cond)
     {
         c = _getch();
-        if ((c == 'a') || (c == 'w') || (c == 'd') || (c == 's'))
+        if ((c == 'a') || (c == 'w') || (c == 'd') || (c == 's') || (c == 'n'))
             new_dir = c;
         else
             continue;
@@ -597,3 +603,8 @@ bool Logic::PointInsideTheField(Point p)
 	}
 	return res;
 }
+
+ void Logic::IncreaseSnake()
+ {
+	 return;
+ }

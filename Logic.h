@@ -10,10 +10,10 @@ class Logic
     const short width = 45;
 	//const short height = 7;
 	//const short width = 7;
-	const Point game_over_point_position1{ width / 2 - 5, height / 2 };
+	const Point level_over_point_position1{ width / 2 - 5, height / 2 };
 	const Point game_over_point_position2{ width / 2 - 9, height / 2 + 2 };
-	const string game_over1 = "Game Over";
-	const string game_ = "Press Enter to exit";
+	const string level_over1 = "Level Is Over";
+	const string press_enter = "Press Enter to continue";
 	const Point win_point_position = { width / 2 - 15, height / 2 };
 	const string win = "Congratulations! This level is yours";
 
@@ -55,6 +55,10 @@ class Logic
 	Point ShortestDirectionTowardsTheSnake(Point enemy);
 	bool PointInsideTheField(Point p);
 	std::vector<Point> Logic::ShortestDirectionTowardsTheSnake();
+
+	//Debug
+	void TransitionToNewLevel();
+	void IncreaseSnake();
 public:
     Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_);
 	~Logic();
