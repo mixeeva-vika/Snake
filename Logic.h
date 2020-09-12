@@ -44,6 +44,7 @@ class Logic
 	bool PointBelongsToTheBlock(Point p);
     void DrawTheField();
     char GenerateNewDirection();
+	Point GenerateNeighborPoint(Point p, Point exceptional_point = { 0, 0 }, bool snake_intersections = true);
 	Point NewEnemyPosition(Point enemy_coordinates, Point smart_point);
 	bool MoveEnemy(int idx, Point smart_point);
 	bool MoveAllEnemy();
@@ -57,7 +58,6 @@ class Logic
 	std::vector<Point> Logic::ShortestDirectionTowardsTheSnake();
 
 	//Debug
-	void TransitionToNewLevel();
 	void IncreaseSnake();
 public:
     Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_);

@@ -23,17 +23,21 @@ Point Snake::Tail()
     return points.back();
 }
 
+bool Snake::CheckProximityOfPoints(Point p1, Point p2)
+{
+	const bool is_right  = ((p2.x == p1.x - 1) && (p2.y == p1.y));
+	const bool is_left   = ((p2.x == p1.x + 1) && (p2.y == p1.y));
+	const bool is_top    = ((p2.x == p1.x)     && (p2.y == p1.y - 1));
+	const bool is_bottom = ((p2.x == p1.x)     && (p2.y == p1.y + 1));
+	return (is_top || is_bottom || is_right || is_left);
+}
+
 void Snake::Move(Point p)
 {
     if ((points[0].x == p.x) && (points[0].y == p.y))
         return;
 
-    const bool is_right  = ((points[0].x == p.x - 1) && (points[0].y == p.y));
-    const bool is_left   = ((points[0].x == p.x + 1) && (points[0].y == p.y));
-    const bool is_top    = ((points[0].x == p.x) && (points[0].y == p.y - 1));
-    const bool is_bottom = ((points[0].x == p.x) && (points[0].y == p.y + 1));
-
-    assert(is_top || is_bottom || is_right || is_left);
+    assert(CheckProximityOfPoints(p, points[0]));
 
     if ((points.size() > 1) && (points[1].x == p.x) && (points[1].y == p.y))
         return;
@@ -45,14 +49,18 @@ void Snake::Move(Point p)
 
 void Snake::Add(Point p)
 {
-    const bool is_right = ((points[0].x == p.x - 1) && (points[0].y == p.y));
-    const bool is_left = ((points[0].x == p.x + 1) && (points[0].y == p.y));
-    const bool is_top = ((points[0].x == p.x) && (points[0].y == p.y - 1));
-    const bool is_bottom = ((points[0].x == p.x) && (points[0].y == p.y + 1));
-
-    assert(is_top || is_bottom || is_right || is_left);
+    assert(CheckProximityOfPoints(p, points[0]));
     
     points.emplace(points.begin(), p);
+}
+
+void Snake::AddTail(Point p)
+{
+	assert(Size() > 0);
+	Point tail = points[Size() - 1];
+	assert(CheckProximityOfPoints(p, tail));
+	points.emplace_back(p);
+
 }
 
 void Snake::Cut(Point p)

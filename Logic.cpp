@@ -140,6 +140,27 @@ char Logic::GenerateNewDirection()
     return v[number];
 }
 
+Point Logic::GenerateNeighborPoint(Point p, Point exceptional_point, bool snake_intersections)
+{
+
+	int new_direction = rand() % 4;
+
+	for (int i = 0; i < offset_points.size(); ++i)
+	{
+		Point new_coordinates = p + offset_points[new_direction];
+		if ((PointInsideTheField(new_coordinates)) && (!(new_coordinates == food)) &&
+			(!PointBelongsToTheBlock(new_coordinates)) && (!enemy.PointBelongsToTheEnemy(new_coordinates)) && !(new_coordinates == exceptional_point)
+			                                                              && (snake_intersections || !snake.PointBelongsToTheSnake(new_coordinates)))
+		{
+
+			return new_coordinates;
+		}
+
+		new_direction = (new_direction + 1) % 4;
+	}
+	return p;
+}
+
 Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 {
 	assert(!(smart_point == food));
@@ -153,19 +174,7 @@ Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 		return smart_point;
 	}
 	
-	int new_direction = rand() % 4;
-	for (int i = 0; i < 4; ++i)
-	{
-		Point new_enemy_coordinates = enemy_coordinates + offset_points[new_direction];
-		if ((PointInsideTheField(new_enemy_coordinates)) && (!(new_enemy_coordinates == food)) &&
-			(!PointBelongsToTheBlock(new_enemy_coordinates)) && (!enemy.PointBelongsToTheEnemy(new_enemy_coordinates)))
-		{
-			return new_enemy_coordinates;
-		}
-
-		new_direction = (new_direction + 1) % 4;	
-	}
-	return enemy_coordinates;
+	return GenerateNeighborPoint(enemy_coordinates);
 }
 
 bool Logic::MoveEnemy(int enemy_idx, Point smart_point) 
@@ -212,9 +221,9 @@ bool Logic::Run()
 	food = GenerateFoodPosition();
     bool cond = true;
     bool you_win = false;
-    char new_dir = 0; // новое направление, в котором движется змея
-    std::thread thr1(&Logic::ThreadFunction1, *this, std::ref(new_dir), std::ref(you_win));
-    std::thread thr2(&Logic::ThreadFunction2, *this, std::ref(new_dir), std::ref(cond));
+    char key = 0; // новое направление, в котором движется змея
+    std::thread thr1(&Logic::ThreadFunction1, *this, std::ref(key), std::ref(you_win));
+    std::thread thr2(&Logic::ThreadFunction2, *this, std::ref(key), std::ref(cond));
 
     thr1.join();
     cond = false;
@@ -229,19 +238,41 @@ bool Logic::Run()
 	return you_win;
 }
 
-void Logic::ThreadFunction1(char& new_dir, bool& you_win)
+void Logic::ThreadFunction1(char& key, bool& you_win)
 {
     pr.Print(food, food_symbol);
     pr.Print(snake.Head(), snake_symbol);
     Point new_pos;
 	int count = 1;
+	char new_dir = 0;
     while (true)
     {
-		if (new_dir == 'n')
+		if (key == 0)
+			continue;
+		if (key == 'n')
 		{
 			you_win = true;
 			return;
 		}
+		if (key == 'i')
+		{
+			Point tail = snake.Tail();
+			Point new_tail = GenerateNeighborPoint(tail, Change(snake.Head(), new_dir), false);
+			if(!(tail == new_tail))
+				snake.AddTail(new_tail);
+			pr.Print(new_tail, snake_symbol);
+			if (snake.Size() == snake_size_for_win)
+			{
+				you_win = true;
+				return;
+			}
+			key = new_dir;
+		}
+		if ((key != 'n') && (key != 'i'))
+		{
+			new_dir = key;
+		}
+
         new_pos = Change(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
 		/////////////////////////////////
@@ -301,14 +332,14 @@ void Logic::ThreadFunction1(char& new_dir, bool& you_win)
     }
 }
 
-void Logic::ThreadFunction2(char& new_dir, bool& cond)
+void Logic::ThreadFunction2(char& key, bool& cond)
 {
     char c;
     while (cond)
     {
         c = _getch();
-        if ((c == 'a') || (c == 'w') || (c == 'd') || (c == 's') || (c == 'n'))
-            new_dir = c;
+        if ((c == 'a') || (c == 'w') || (c == 'd') || (c == 's') || (c == 'n') || (c == 'i'))
+            key = c;
         else
             continue;
     } 
