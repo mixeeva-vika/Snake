@@ -19,6 +19,7 @@ class Logic
 
     const char snake_symbol = 219;
     const char food_symbol = '*';
+	const char freezing_food_symbol = 43;
 	const char enemy_symbol = 197;
     const Point snake_start_position{ 44, 10 };
 	//const Point snake_start_position{ 3, 3 };
@@ -33,6 +34,7 @@ class Logic
     Snake snake;
 	Enemy enemy;
     Point food;
+	Point freezing_food = {0, 0};
     PrintHelper pr;
 
 

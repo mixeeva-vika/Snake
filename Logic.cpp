@@ -89,7 +89,8 @@ Point Logic::GeneratePoint()
 	{
 		p.x = rand() % (width - 1) + 1;
 		p.y = rand() % (height - 1) + 1;
-	} while (snake.PointBelongsToTheSnake(p) || PointBelongsToTheBlock(p) || enemy.PointBelongsToTheEnemy(p));
+	} while (snake.PointBelongsToTheSnake(p) || PointBelongsToTheBlock(p) || enemy.PointBelongsToTheEnemy(p)
+                                                                || (p == food) || (p == freezing_food));
 
 	return p;
 }
@@ -244,7 +245,10 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
     pr.Print(snake.Head(), snake_symbol);
     Point new_pos;
 	int count = 1;
+	int count_time_for_freezing_food = 1;
 	char new_dir = 0;
+	bool freezing = false;
+	int freez_enemy_time = 1;
     while (true)
     {
 		if (key == 0)
@@ -276,6 +280,32 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
         new_pos = Change(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
 		/////////////////////////////////
+		if ((count_time_for_freezing_food == 15) && (freezing_food == Point{0, 0}))
+		{
+			freezing_food = GenerateFoodPosition();
+			pr.Print(freezing_food, freezing_food_symbol);
+		}
+
+		if ((count_time_for_freezing_food == 60) && !(freezing_food == Point{ 0, 0 }))
+		{
+		    pr.Clear(freezing_food);
+			freezing_food = {0, 0};
+			count_time_for_freezing_food = 0;
+		}
+		if (new_pos == freezing_food)
+		{
+			freezing = true;
+
+		}
+		if (freezing == true)
+		{
+			++freez_enemy_time;
+		}
+		if (freez_enemy_time == 50)
+		{
+			freez_enemy_time = 1;
+			freezing = false;
+		}
 		if ((count % 3 == 0) && (new_dir != 0))
 		{
 			//pr.Print({ 0 ,height + 1}, '!');
@@ -291,11 +321,12 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 				}
 			}
 			std::cout << endl;
-			if (MoveAllEnemy() == false)
+			if ((!freezing) && (MoveAllEnemy() == false))
 				return;
 		}
-		/////////////////////////////////
+		
 		++count;
+		++count_time_for_freezing_food;
         if (new_pos == snake.Head())
             continue;
         if (snake.PointBelongsToTheSnake(new_pos))
@@ -363,181 +394,6 @@ void Logic::ClearTailOfSnake(Point p)
 		pr.Clear(remove_points[i]);
 }
 
-Point Logic::ShortestDirectionTowardsTheSnake(Point enemy_point)
-{
-	std::vector<std::vector<int>> lenght(height);
-	for (int i = 0; i < height; ++i)
-		lenght[i].resize(width, -3);
-	for (short i = 0; i < height; ++i)
-	{
-		for (short j = 0; j < width; ++j)
-		{
-			if (PointBelongsToTheBlock({ j, i }) || (Point{j, i} == food))
-				lenght[i][j] = -1;
-			if (snake.PointBelongsToTheSnake({ j, i }))
-				lenght[i][j] = -2;
-			bool left = (enemy_point.x - 1 > 0)&&(enemy.PointBelongsToTheEnemy({ enemy_point.x - 1 , enemy_point.y }));
-			bool right = (enemy_point.x + 1 < width) && (enemy.PointBelongsToTheEnemy({ enemy_point.x + 1 , enemy_point.y }));
-			bool up = (enemy_point.y + 1 < height) && (enemy.PointBelongsToTheEnemy({ enemy_point.x  , enemy_point.y + 1}));
-			bool down = (enemy_point.y - 1 > 0) && (enemy.PointBelongsToTheEnemy({ enemy_point.x , enemy_point.y - 1}));
-			if(left)
-				lenght[enemy_point.y][enemy_point.x - 1] = -1;
-			if(right)
-				lenght[enemy_point.y][enemy_point.x + 1] = -1;
-			if(up)
-				lenght[enemy_point.y + 1][enemy_point.x] = -1;
-			if(down)
-				lenght[enemy_point.y - 1][enemy_point.x] = -1;
-		}
-	}
-
-	ofstream file; // создаем объект класса ifstream
-	file.open("output.txt"); // открываем файл
-	if (!file)
-	{
-		std::cout << "Error with file" << std::endl;
-	}
-	file << "enemy_point: " << enemy_point.x << " " << enemy_point.y << endl;
-	queue<Point> q; // создаем очередь
-	q.push(enemy_point); // добавляем первый элемент в очередь(позиция врага в данный момент)
-	lenght[enemy_point.y][enemy_point.x] = 0;
-	while (!q.empty())
-	{
-		
-		Point tmp = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
-		int cur_len = lenght[tmp.y][tmp.x] + 1;
-		q.pop();  // Удаляем первый элемент в очереди
-		bool left = (tmp.x - 1 > 0) && (lenght[tmp.y][tmp.x - 1] != -1);
-		bool right = (tmp.x + 1 < width) && (lenght[tmp.y][tmp.x + 1] != -1);
-		bool up = (tmp.y + 1 < height) && (lenght[tmp.y + 1][tmp.x] != -1);
-		bool down = (tmp.y - 1 > 0) && (lenght[tmp.y - 1][tmp.x] != -1);
-		if ((left) && (lenght[tmp.y][tmp.x - 1] == -2) ||
-			(right) && (lenght[tmp.y][tmp.x + 1] == -2) ||
-			(up) && (lenght[tmp.y + 1][tmp.x] == -2) ||
-			(down) && (lenght[tmp.y - 1][tmp.x] == -2))
-		{
-			if ((tmp.x == enemy_point.x) && (tmp.y == enemy_point.y))
-			{
-				if ((left) && (lenght[tmp.y][tmp.x - 1] == -2))
-					return Point{ tmp.x - 1, tmp.y};
-				if ((right) && (lenght[tmp.y][tmp.x + 1] == -2))
-					return Point{ tmp.x + 1, tmp.y };
-				if ((up) && (lenght[tmp.y + 1][tmp.x] == -2))
-					return Point{ tmp.x, tmp.y + 1};
-				if ((down) && (lenght[tmp.y - 1][tmp.x] == -2))
-					return Point{ tmp.x, tmp.y - 1};
-			}
-			int len = lenght[tmp.y][tmp.x] - 1;
-			Point cur = tmp;
-			file << "tmp: " << tmp.x << " "<< tmp.y << endl;
-			
-			while (len != 0)
-			{
-				bool left_ = (cur.x - 1 > 0) && (lenght[cur.y][cur.x - 1] != -1);
-				bool right_ = (cur.x + 1 < width) && (lenght[cur.y][cur.x + 1] != -1);
-				bool up_ = (cur.y + 1 < height) && (lenght[cur.y + 1][cur.x] != -1);
-				bool down_ = (cur.y - 1 > 0) && (lenght[cur.y - 1][cur.x] != -1);
-
-				file << "len_: " << len << endl;	
-				if ((left_) && (len == lenght[cur.y][cur.x - 1]))
-				{
-					cur = { cur.x - 1 , cur.y };
-				}
-				else if ((right_) && (len == lenght[cur.y][cur.x + 1]))
-				{
-					cur = { cur.x + 1 , cur.y };
-				}
-				else if ((up_) && (len == lenght[cur.y + 1][cur.x]))
-				{
-					cur = { cur.x , cur.y + 1 };
-				}
-				else if ((down_) && (len == lenght[cur.y - 1][cur.x]))
-				{
-					cur = { cur.x , cur.y - 1 };
-				}
-				else
-					throw " Error! No way";
-
-				assert((cur.x != enemy_point.x)||(cur.y != enemy_point.y));
-				if ((cur.x < 0) || (cur.y < 0))
-				{
-					int b = 0;
-				}
-				file << " x :" << cur.x << " y: " << cur.y << endl;
-				file << endl;
-				--len;
-			}
-			
-			/////////////////////////////////////////////////////////////////////////
-			/*
-		    for (int i = 0; i < lenght.size(); ++i)
-			{
-				for (int j = 0; j < lenght[i].size(); ++j)
-				{
-					if (lenght[i][j] == -3)
-					{
-						file << " _ ";
-					}
-					else if (lenght[i][j] == -1)
-					{
-						file << " " << block_symbol << " ";
-					}
-					else if (lenght[i][j] == -2)
-					{
-						file << " " << snake_symbol << " ";
-					}
-					else
-					{
-						if (lenght[i][j] < 10)
-							file << " " << lenght[i][j] << " ";
-						else if (lenght[i][j] >= 10)
-							file << " " << lenght[i][j];
-					}
-					//file << lenght[i][j] << " ";
-				}
-				file << std::endl;
-			}
-			/////////////////////////////////////////////////////////////////////////
-			file <<"cur " << cur.x << cur.y << std::endl;
-			
-			if (cur == enemy_point)
-			{
-				int a = 0;
-				file << "cur == enemy_point" << endl;
-			}
-			*/
-			file.close();
-			return cur;
-		}
-
-		if ((left) && (lenght[tmp.y][tmp.x - 1] == -3))
-		{
-			lenght[tmp.y][tmp.x - 1] = cur_len;
-			//pr.Print(Point{ tmp.x - 1 , tmp.y }, '0' + cur_len);
-			q.push({ tmp.x - 1 , tmp.y });
-		}
-		if ((right) && (lenght[tmp.y][tmp.x + 1] == -3))
-		{
-			lenght[tmp.y][tmp.x + 1] = cur_len;
-			//pr.Print(Point{ tmp.x + 1 , tmp.y }, '0' + cur_len);
-			q.push({ tmp.x + 1, tmp.y });
-		}
-		if ((up) && (lenght[tmp.y + 1][tmp.x] == -3))
-		{
-			lenght[tmp.y + 1][tmp.x] = cur_len;
-			//pr.Print(Point{ tmp.x, tmp.y + 1 }, '0' + cur_len);
-			q.push({ tmp.x, tmp.y + 1});
-		}
-		if ((down) && (lenght[tmp.y - 1][tmp.x] == -3))
-		{
-			lenght[tmp.y - 1][tmp.x] = cur_len;
-			//pr.Print(Point{ tmp.x , tmp.y - 1}, '0' + cur_len);
-			q.push({ tmp.x, tmp.y - 1 });
-		}
-		
-
-	}	
-}
 
 bool Logic::PointInsideTheField(Point p)
 {
