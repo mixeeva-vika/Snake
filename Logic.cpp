@@ -294,8 +294,9 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		}
 		if (new_pos == freezing_food)
 		{
+			pr.Clear(freezing_food);
 			freezing = true;
-
+			freezing_food = { 0, 0 };
 		}
 		if (freezing == true)
 		{
@@ -305,6 +306,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		{
 			freez_enemy_time = 1;
 			freezing = false;
+			count_time_for_freezing_food = 0;
 		}
 		if ((count % 3 == 0) && (new_dir != 0))
 		{
@@ -422,6 +424,7 @@ bool Logic::PointInsideTheField(Point p)
 		lenght[i].resize(width, free_place);
 
 	lenght[food.y][food.x] = block_place;
+	lenght[freezing_food.y][freezing_food.x] = block_place;
 	for (short i = 0; i < block.size(); ++i)
 	{
 		lenght[block[i].y][block[i].x] = block_place;
