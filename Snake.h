@@ -6,6 +6,8 @@
 class Snake
 {
     std::vector<Point> points;
+	bool freezing = false;
+	bool eat = true;
 public:
     Snake(Point p);
     Point Head();
@@ -20,4 +22,9 @@ public:
     int Size();
 	std::vector<Point> CutOfTail(Point p);
 	const std::vector<Point>& GetPoints();
+
+	bool GetFreezing();
+	void SetFreezing(bool freez);
+	bool GetEat();
+	void SetEat(bool eat_);
 };

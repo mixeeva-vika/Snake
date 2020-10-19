@@ -3,7 +3,6 @@
 #include"Enemy.h"
 #include"PrintHelper.h"
 
-
 class Logic
 {
     const short height = 25;
@@ -55,7 +54,6 @@ class Logic
     void Clear();
 	void ClearTailOfSnake(Point p);
 	int DistanceBetweenPoints(Point a, Point b);
-	Point ShortestDirectionTowardsTheSnake(Point enemy);
 	bool PointInsideTheField(Point p);
 	std::vector<Point> Logic::ShortestDirectionTowardsTheSnake();
 

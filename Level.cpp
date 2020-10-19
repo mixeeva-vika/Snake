@@ -15,7 +15,7 @@ void Level::Levels()
 	{
 		bool success = false;
 		int lifes = 0;
-		Logic l(10 + i, i, i, i);
+		Logic l(10 + i, i + 3, i, i);
 		for (int j = 0; j < count_of_lifes; ++j)
 		{
 			std::string current_level = "Level " + std::to_string(i + 1);

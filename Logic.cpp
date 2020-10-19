@@ -247,8 +247,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 	int count = 1;
 	int count_time_for_freezing_food = 1;
 	char new_dir = 0;
-	bool freezing = false;
-	int freez_enemy_time = 1;
+	//int freez_enemy_time = 1;
     while (true)
     {
 		if (key == 0)
@@ -295,36 +294,16 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		if (new_pos == freezing_food)
 		{
 			pr.Clear(freezing_food);
-			freezing = true;
+			enemy.SetFreezing();
 			freezing_food = { 0, 0 };
 		}
-		if (freezing == true)
+		if (enemy.GetFreezing() == true)
 		{
-			++freez_enemy_time;
-		}
-		if (freez_enemy_time == 50)
-		{
-			freez_enemy_time = 1;
-			freezing = false;
 			count_time_for_freezing_food = 0;
 		}
-		if ((count % 3 == 0) && (new_dir != 0))
+		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
 		{
-			//pr.Print({ 0 ,height + 1}, '!');
-			for (int i = 0; i < count_of_enemy; ++i)
-			{
-				Point cur_enemy = enemy.Get(i);
-				//Point cur_enemy = enemy.Get(i);
-				//std::cout << '{' << cur_enemy.x <<' '<< cur_enemy.y<< '}' << "  ";
-				
-				for (int j = 0; j < i; ++j)
-				{
-					assert(!(enemy.Get(j) == cur_enemy));
-				}
-			}
-			std::cout << endl;
-			if ((!freezing) && (MoveAllEnemy() == false))
-				return;
+			return;
 		}
 		
 		++count;

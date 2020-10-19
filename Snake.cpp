@@ -113,3 +113,20 @@ const std::vector<Point>& Snake::GetPoints()
 {
 	return points;
 }
+
+bool Snake::GetFreezing()
+{
+	return freezing;
+}
+void Snake::SetFreezing(bool freez)
+{
+	freezing = freez;
+}
+bool Snake::GetEat()
+{
+	return eat;
+}
+void Snake::SetEat(bool eat_)
+{
+	eat = eat_;
+}
