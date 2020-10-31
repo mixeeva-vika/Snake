@@ -122,11 +122,11 @@ void Snake::SetFreezing(bool freez)
 {
 	freezing = freez;
 }
-bool Snake::GetEat()
+bool Snake::GetCanBeEaten()
 {
-	return eat;
+	return can_be_eaten;
 }
-void Snake::SetEat(bool eat_)
+void Snake::SetEat(bool can_be_eaten_)
 {
-	eat = eat_;
+	can_be_eaten = can_be_eaten_;
 }

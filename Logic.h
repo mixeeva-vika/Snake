@@ -2,13 +2,12 @@
 #include"Snake.h"
 #include"Enemy.h"
 #include"PrintHelper.h"
+#include "FreezingFood.h"
 
 class Logic
 {
     const short height = 25;
     const short width = 45;
-	//const short height = 7;
-	//const short width = 7;
 	const Point level_over_point_position1{ width / 2 - 5, height / 2 };
 	const Point game_over_point_position2{ width / 2 - 9, height / 2 + 2 };
 	const string level_over1 = "Level Is Over";
@@ -18,10 +17,8 @@ class Logic
 
     const char snake_symbol = 219;
     const char food_symbol = '*';
-	const char freezing_food_symbol = 43;
 	const char enemy_symbol = 197;
     const Point snake_start_position{ 44, 10 };
-	//const Point snake_start_position{ 3, 3 };
     const int snake_size_for_win = 3;
 	const int count_of_block;
 	vector<Point> block;
@@ -33,7 +30,7 @@ class Logic
     Snake snake;
 	Enemy enemy;
     Point food;
-	Point freezing_food = {0, 0};
+	FreezingFood freezingfood;
     PrintHelper pr;
 
 

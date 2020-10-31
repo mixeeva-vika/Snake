@@ -7,7 +7,7 @@ class Snake
 {
     std::vector<Point> points;
 	bool freezing = false;
-	bool eat = true;
+	bool can_be_eaten = true;
 public:
     Snake(Point p);
     Point Head();
@@ -25,6 +25,6 @@ public:
 
 	bool GetFreezing();
 	void SetFreezing(bool freez);
-	bool GetEat();
-	void SetEat(bool eat_);
+	bool GetCanBeEaten();
+	void SetEat(bool can_be_eaten_);
 };

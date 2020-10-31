@@ -57,9 +57,9 @@ void Enemy::SetFreezing()
 
 bool Enemy::GetCanEat()
 {
-	return can_eat;
+	return can_be_eaten;
 }
-void Enemy::SetCanEat(bool eat)
+void Enemy::SetCanEat(bool can_be_eaten_)
 {
-	can_eat = eat;
+	can_be_eaten = can_be_eaten_;
 }

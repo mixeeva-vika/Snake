@@ -90,7 +90,7 @@ Point Logic::GeneratePoint()
 		p.x = rand() % (width - 1) + 1;
 		p.y = rand() % (height - 1) + 1;
 	} while (snake.PointBelongsToTheSnake(p) || PointBelongsToTheBlock(p) || enemy.PointBelongsToTheEnemy(p)
-                                                                || (p == food) || (p == freezing_food));
+                                                                || (p == food) || (p == freezingfood.Get()));
 
 	return p;
 }
@@ -149,7 +149,7 @@ Point Logic::GenerateNeighborPoint(Point p, Point exceptional_point, bool snake_
 	for (int i = 0; i < offset_points.size(); ++i)
 	{
 		Point new_coordinates = p + offset_points[new_direction];
-		if ((PointInsideTheField(new_coordinates)) && (!(new_coordinates == food)) &&
+		if ((PointInsideTheField(new_coordinates)) && (!(new_coordinates == food)) && (!(new_coordinates == freezingfood.Get())) &&
 			(!PointBelongsToTheBlock(new_coordinates)) && (!enemy.PointBelongsToTheEnemy(new_coordinates)) && !(new_coordinates == exceptional_point)
 			                                                              && (snake_intersections || !snake.PointBelongsToTheSnake(new_coordinates)))
 		{
@@ -165,6 +165,7 @@ Point Logic::GenerateNeighborPoint(Point p, Point exceptional_point, bool snake_
 Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 {
 	assert(!(smart_point == food));
+	assert(!(smart_point == freezingfood.Get()));
 	assert(!PointBelongsToTheBlock(smart_point));
 	assert(PointInsideTheField(smart_point));
 	
@@ -245,9 +246,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
     pr.Print(snake.Head(), snake_symbol);
     Point new_pos;
 	int count = 1;
-	int count_time_for_freezing_food = 1;
 	char new_dir = 0;
-	//int freez_enemy_time = 1;
     while (true)
     {
 		if (key == 0)
@@ -279,27 +278,21 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
         new_pos = Change(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
 		/////////////////////////////////
-		if ((count_time_for_freezing_food == 15) && (freezing_food == Point{0, 0}))
+		if (freezingfood.NeedToGeneratePoint())
 		{
-			freezing_food = GenerateFoodPosition();
-			pr.Print(freezing_food, freezing_food_symbol);
+			freezingfood.Set(GenerateFoodPosition());
+			pr.Print(freezingfood.Get(), freezingfood.GetSymbol());
 		}
-
-		if ((count_time_for_freezing_food == 60) && !(freezing_food == Point{ 0, 0 }))
+		else if (freezingfood.NeedToClear())
 		{
-		    pr.Clear(freezing_food);
-			freezing_food = {0, 0};
-			count_time_for_freezing_food = 0;
+			pr.Clear(freezingfood.Get());
+			freezingfood.Set(Point{0,0});
 		}
-		if (new_pos == freezing_food)
+		if (new_pos == freezingfood.Get())
 		{
-			pr.Clear(freezing_food);
+			pr.Clear(freezingfood.Get());
+			freezingfood.Set(Point{ 0,0 });
 			enemy.SetFreezing();
-			freezing_food = { 0, 0 };
-		}
-		if (enemy.GetFreezing() == true)
-		{
-			count_time_for_freezing_food = 0;
 		}
 		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
 		{
@@ -307,7 +300,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		}
 		
 		++count;
-		++count_time_for_freezing_food;
+		//++count_time_for_freezing_food;
         if (new_pos == snake.Head())
             continue;
         if (snake.PointBelongsToTheSnake(new_pos))
@@ -403,7 +396,7 @@ bool Logic::PointInsideTheField(Point p)
 		lenght[i].resize(width, free_place);
 
 	lenght[food.y][food.x] = block_place;
-	lenght[freezing_food.y][freezing_food.x] = block_place;
+	lenght[freezingfood.Get().y][freezingfood.Get().x] = block_place;
 	for (short i = 0; i < block.size(); ++i)
 	{
 		lenght[block[i].y][block[i].x] = block_place;

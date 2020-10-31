@@ -9,7 +9,7 @@ class Enemy
 	std::vector<Point> points;
 	double brean;
 	bool freezing = false;
-	bool can_eat = false;
+	bool can_be_eaten = false;
 	unsigned int start_freezing_time = clock();
 	time_t freezing_time = 5000;
 public: 
@@ -22,5 +22,5 @@ public:
 	bool GetFreezing();
 	void SetFreezing();
 	bool GetCanEat();
-	void SetCanEat(bool eat);
+	void SetCanEat(bool can_be_eaten_);
 };
