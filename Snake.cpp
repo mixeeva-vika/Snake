@@ -124,9 +124,19 @@ void Snake::SetFreezing(bool freez)
 }
 bool Snake::GetCanBeEaten()
 {
+	if (can_be_eaten == false)
+	{
+		unsigned int cur_time = clock();
+		if (cur_time - start_time >= time_can_not_be_eaten)
+		{
+			can_be_eaten = true;
+		}
+	}
 	return can_be_eaten;
 }
-void Snake::SetEat(bool can_be_eaten_)
+void Snake::SetCanBeEaten(bool can_be_eaten_)
 {
+	if(can_be_eaten_ == false)
+		start_time = clock();
 	can_be_eaten = can_be_eaten_;
 }

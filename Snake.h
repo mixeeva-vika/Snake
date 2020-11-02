@@ -2,12 +2,14 @@
 #include<iostream>
 #include<vector>
 #include"Point.h"
-
+#include <ctime>
 class Snake
 {
     std::vector<Point> points;
 	bool freezing = false;
 	bool can_be_eaten = true;
+	unsigned int start_time = clock();
+	time_t time_can_not_be_eaten = 5000;
 public:
     Snake(Point p);
     Point Head();
@@ -26,5 +28,6 @@ public:
 	bool GetFreezing();
 	void SetFreezing(bool freez);
 	bool GetCanBeEaten();
-	void SetEat(bool can_be_eaten_);
+	void SetCanBeEaten(bool can_be_eaten_);
+
 };

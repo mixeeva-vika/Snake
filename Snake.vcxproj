@@ -111,6 +111,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="FoodCanNotEatSnake.cpp" />
     <ClCompile Include="FreezingFood.cpp" />
     <ClCompile Include="Level.cpp" />
     <ClCompile Include="Logic.cpp" />
@@ -119,6 +120,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="FoodCanNotEatSnake.h" />
     <ClInclude Include="FreezingFood.h" />
     <ClInclude Include="Level.h" />
     <ClInclude Include="Logic.h" />

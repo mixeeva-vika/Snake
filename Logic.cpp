@@ -141,7 +141,7 @@ char Logic::GenerateNewDirection()
     return v[number];
 }
 
-Point Logic::GenerateNeighborPoint(Point p, Point exceptional_point, bool snake_intersections)
+Point Logic::GenerateNeighborPoint(Point p, bool snake_intersections, Point exceptional_point)
 {
 
 	int new_direction = rand() % 4;
@@ -151,7 +151,7 @@ Point Logic::GenerateNeighborPoint(Point p, Point exceptional_point, bool snake_
 		Point new_coordinates = p + offset_points[new_direction];
 		if ((PointInsideTheField(new_coordinates)) && (!(new_coordinates == food)) && (!(new_coordinates == freezingfood.Get())) &&
 			(!PointBelongsToTheBlock(new_coordinates)) && (!enemy.PointBelongsToTheEnemy(new_coordinates)) && !(new_coordinates == exceptional_point)
-			                                                              && (snake_intersections || !snake.PointBelongsToTheSnake(new_coordinates)))
+			 && (snake_intersections || !snake.PointBelongsToTheSnake(new_coordinates)))
 		{
 
 			return new_coordinates;
@@ -176,7 +176,7 @@ Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 		return smart_point;
 	}
 	
-	return GenerateNeighborPoint(enemy_coordinates);
+	return GenerateNeighborPoint(enemy_coordinates, snake.GetCanBeEaten());
 }
 
 bool Logic::MoveEnemy(int enemy_idx, Point smart_point) 
@@ -259,7 +259,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		if (key == 'i')
 		{
 			Point tail = snake.Tail();
-			Point new_tail = GenerateNeighborPoint(tail, Change(snake.Head(), new_dir), false);
+			Point new_tail = GenerateNeighborPoint(tail, false, Change(snake.Head(), new_dir));
 			if(!(tail == new_tail))
 				snake.AddTail(new_tail);
 			pr.Print(new_tail, snake_symbol);
@@ -274,10 +274,9 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		{
 			new_dir = key;
 		}
-
         new_pos = Change(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
-		/////////////////////////////////
+		/////////////////freezingfood////////////////
 		if (freezingfood.NeedToGeneratePoint())
 		{
 			freezingfood.Set(GenerateFoodPosition());
@@ -294,13 +293,30 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 			freezingfood.Set(Point{ 0,0 });
 			enemy.SetFreezing();
 		}
+		/////////////////////////////////////////////////
+		//////////////////food_can_not_eat_snake//////////
+		if (food_can_not_eat_snake.NeedToGeneratePoint())
+		{
+			food_can_not_eat_snake.Set(GenerateFoodPosition());
+			pr.Print(food_can_not_eat_snake.Get(), food_can_not_eat_snake.GetSymbol());
+		}
+		else if (food_can_not_eat_snake.NeedToClear())
+		{
+			pr.Clear(food_can_not_eat_snake.Get());
+			food_can_not_eat_snake.Set(Point{ 0,0 });
+		}
+		if (new_pos == food_can_not_eat_snake.Get())
+		{
+			pr.Clear(food_can_not_eat_snake.Get());
+			food_can_not_eat_snake.Set(Point{ 0,0 });
+			//enemy.SetFreezing();
+		}
+		/////////////////////////////////////////////////
 		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
 		{
 			return;
 		}
-		
 		++count;
-		//++count_time_for_freezing_food;
         if (new_pos == snake.Head())
             continue;
         if (snake.PointBelongsToTheSnake(new_pos))
@@ -331,9 +347,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
             snake.Move(new_pos);
             pr.Clear(tail);
         }
-
-        pr.Print(new_pos, snake_symbol);
-		
+        pr.Print(new_pos, snake_symbol);	
     }
 }
 
@@ -433,7 +447,6 @@ bool Logic::PointInsideTheField(Point p)
 				if ((res[idx].x == 0) && (res[idx].y == 0))
 				{
 					is_first_enemy = false;
-					//////////////////////
 					assert(!(current_point == food));
 					assert(!PointBelongsToTheBlock(current_point));
 					assert(!enemy.PointBelongsToTheEnemy(current_point));
@@ -441,15 +454,12 @@ bool Logic::PointInsideTheField(Point p)
 					res[idx] = current_point;
 					neighbor_len = block_place;
 					++count;
-					//if (count == res.size())
-					//	return res;
 				}
 				continue;
 			}
 			if (neighbor_len == free_place)
 			{
 				neighbor_len = cur_len;
-				//pr.Print(Point{ cur_neighbor.x , cur_neighbor.y }, '0' + cur_len);
 				q.push({ cur_neighbor.x , cur_neighbor.y });
 			}
 		}
@@ -470,3 +480,7 @@ bool Logic::PointInsideTheField(Point p)
  {
 	 return;
  }
+
+
+
+ //В момент, когда змею нельзя есть, нужно сообщить это врагам. Т.е в GenerateNeighborPoint добавить проверку

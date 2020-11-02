@@ -3,6 +3,7 @@
 #include"Enemy.h"
 #include"PrintHelper.h"
 #include "FreezingFood.h"
+#include "FoodCanNotEatSnake.h"
 
 class Logic
 {
@@ -31,6 +32,7 @@ class Logic
 	Enemy enemy;
     Point food;
 	FreezingFood freezingfood;
+	FoodCanNotEatSnake food_can_not_eat_snake;
     PrintHelper pr;
 
 
@@ -42,7 +44,7 @@ class Logic
 	bool PointBelongsToTheBlock(Point p);
     void DrawTheField();
     char GenerateNewDirection();
-	Point GenerateNeighborPoint(Point p, Point exceptional_point = { 0, 0 }, bool snake_intersections = true);
+	Point GenerateNeighborPoint(Point p, bool snake_intersections = true, Point exceptional_point = { 0, 0 });
 	Point NewEnemyPosition(Point enemy_coordinates, Point smart_point);
 	bool MoveEnemy(int idx, Point smart_point);
 	bool MoveAllEnemy();
