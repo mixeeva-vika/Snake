@@ -1,4 +1,5 @@
 #include "Level.h"
+#include "Field.h"
 #include <thread>
 #include <chrono>
 /*
@@ -11,6 +12,7 @@ void Level::Levels()
 {
 	int count_of_lifes = 3;
 	PrintHelper pr;
+	Field field;
 	for (int i = 0; i < count_of_levels; ++i)
 	{
 		bool success = false;
@@ -18,10 +20,8 @@ void Level::Levels()
 		Logic l(10 + i, i + 3, i, i);
 		for (int j = 0; j < count_of_lifes; ++j)
 		{
-			std::string current_level = "Level " + std::to_string(i + 1);
-			std::string current_try = "Attempt " + std::to_string(j + 1);
-			pr.Print(Point{ 45 / 2 - 3, 25 / 2 - 5 }, current_level);
-			pr.Print(Point{ 45 / 2 - 3, 25 / 2 - 3 }, current_try);
+			field.Clear();
+			field.PrintLevel(i + 1, j + 1);
 			std::this_thread::sleep_for(2s);
 			if (l.Run())
 			{
@@ -31,7 +31,7 @@ void Level::Levels()
 		}
 		if (!success)
 		{
-			pr.Print(Point{ 45 / 2 - 3, 25 / 2 - 5 }, "Game Is Over");
+			field.PrintGameOver();
 			std::this_thread::sleep_for(2s);
 			return;
 		}

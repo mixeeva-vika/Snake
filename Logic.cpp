@@ -4,6 +4,7 @@
 #include <queue>
 #include <fstream>
 #include <assert.h>
+#include<iostream>
 
 Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_):
 	snake(snake_start_position) , 
@@ -12,108 +13,23 @@ Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_
 	power_of_brean_of_enemy(power_of_brean_of_enemy_),
 	enemy(count_of_enemy)
 {
-     srand(time(0));
+     srand(static_cast<unsigned int>(time(0)));
 	 GenerateEnemyPosition();
-	 block.resize(count_of_block);
-	 
+	 block.resize(count_of_block); 
 }
 
 Logic::~Logic()
 {
-	Clear();
-}
-
-void Logic::DrawTheField()
-{ 
-    for(short i = 0; i < width; ++i)
-        pr.Print(Point{ i, 0 }, '-');
-    for (short i = 0; i < width; ++i)
-        pr.Print(Point{ i, height }, '-');
-    for (short i = 0; i < height; ++i)
-        pr.Print(Point{ 0, i }, '|');
-    for (short i = 0; i < height; ++i)
-        pr.Print(Point{ width , i }, '|');
-	for (int i = 0; i < count_of_block; ++i)
-		pr.Print(block[i], block_symbol);
-	for (int i = 0; i < count_of_enemy; ++i)
-		pr.Print(enemy.Get(i), enemy_symbol);
-}
-
-Point Logic::Change(Point p, char c)
-{
-	Point old_p = p;
-    if (c == 'a')
-    {
-		bool a = PointBelongsToTheBlock({ p.x - 1, p.y });
-		if (a)
-		{
-			int h = 0;
-		}
-		p.x -= ((p.x == 1) || (PointBelongsToTheBlock({p.x - 1, p.y}))) ? 0 : 1;
-    }
-    if (c == 'w')
-    {
-		bool b = PointBelongsToTheBlock({ p.x, p.y - 1});
-		if (b)
-		{
-			int h = 0;
-		}
-        p.y -= ((p.y == 1) || (PointBelongsToTheBlock({ p.x, p.y - 1 }))) ? 0 : 1;
-    }
-    if (c == 'd')
-    {
-		bool c = PointBelongsToTheBlock({ p.x + 1, p.y });
-		if (c)
-		{
-			int h = 0;
-		}
-        p.x += ((p.x == (width - 1)) || (PointBelongsToTheBlock({ p.x + 1, p.y})))? 0 : 1;
-    }
-	if (c == 's')
-	{
-		bool d = PointBelongsToTheBlock({ p.x, p.y + 1 });
-		if (d)
-		{
-			int h = 0;
-		}
-		p.y += ((p.y == (height - 1)) || (PointBelongsToTheBlock({ p.x, p.y + 1 }))) ? 0 : 1;
-	}
-	
-    return p;
-}
-
-Point Logic::GeneratePoint()
-{
-	Point p;
-	do
-	{
-		p.x = rand() % (width - 1) + 1;
-		p.y = rand() % (height - 1) + 1;
-	} while (snake.PointBelongsToTheSnake(p) || PointBelongsToTheBlock(p) || enemy.PointBelongsToTheEnemy(p)
-                                                                || (p == food) || (p == freezingfood.Get()));
-
-	return p;
-}
-
-Point Logic::GenerateFoodPosition()
-{
-   return GeneratePoint();
-}
-
-bool Logic::PointBelongsToTheBlock(Point p)
-{
-	for (int i = 0; i < block.size(); ++i)
-	{
-		if (p == block[i])
-			return true;
-	}
-	return false;
+	field.Clear();
 }
 
 void Logic::GenerateBlockPosition()
 {
-	for(int i = 0; i < count_of_block; ++i)
-	    block[i] = GeneratePoint();
+	for (int i = 0; i < count_of_block; ++i)
+	{
+		block[i] = field.GeneratePoint();
+		field.Set(block[i], Objects::Block);
+	}
 }
 
 void Logic::GenerateEnemyPosition()
@@ -123,40 +39,55 @@ void Logic::GenerateEnemyPosition()
 		Point new_pos;
 		do
 		{
-			new_pos = GeneratePoint();
-		} while (DistanceBetweenPoints(new_pos, snake_start_position) < 5);
+			new_pos = field.GeneratePoint();
+		} while (new_pos.Distance(snake_start_position) < 5);
 		for (int j = 0; j < i; ++j)
 		{
-			assert(!(new_pos == enemy.Get(j)));
+			assert(new_pos != enemy.Get(j));
 		}
 		enemy.Set(new_pos, i);
+		field.Set(new_pos, Objects::Enemy);
 	}
 }
 
-
-char Logic::GenerateNewDirection()
+void Logic::InitializeTheGame()
 {
-    static const std::vector<char> v{'a','w', 'd', 's'};
-    int number = rand() % 4;
-    return v[number];
+	field.Clear();
+	field.DrawTheFieldBoundary();
+	GenerateBlockPosition();
+	GenerateEnemyPosition();
+	food = field.GeneratePoint();
+	field.Set(food, Objects::Food);
+	field.Set(snake.Head(), Objects::Snake);
+}
+
+Point Logic::MovePoint(Point p, char c)
+{
+	Point diff;
+    if (c == 'a')
+		diff = { -1, 0 };
+    if (c == 'w')
+		diff = { 0, -1 };
+    if (c == 'd')
+		diff = { 1, 0 };
+	if (c == 's')
+		diff = { 0, 1 };
+	Point new_point = p + diff;
+	if (field.InTheField(new_point) && (field.Get(new_point) != Objects::Block))
+		return new_point;
+    return p;
 }
 
 Point Logic::GenerateNeighborPoint(Point p, bool snake_intersections, Point exceptional_point)
 {
-
 	int new_direction = rand() % 4;
 
 	for (int i = 0; i < offset_points.size(); ++i)
 	{
-		Point new_coordinates = p + offset_points[new_direction];
-		if ((PointInsideTheField(new_coordinates)) && (!(new_coordinates == food)) && (!(new_coordinates == freezingfood.Get())) &&
-			(!PointBelongsToTheBlock(new_coordinates)) && (!enemy.PointBelongsToTheEnemy(new_coordinates)) && !(new_coordinates == exceptional_point)
-			 && (snake_intersections || !snake.PointBelongsToTheSnake(new_coordinates)))
-		{
-
-			return new_coordinates;
-		}
-
+		Point new_point = p + offset_points[new_direction];
+		if(field.InTheField(new_point) && (new_point != exceptional_point) &&
+			((field.Get(new_point) == Objects::Empty) || (snake_intersections && field.Get(new_point) == Objects::Snake)))
+			return new_point;
 		new_direction = (new_direction + 1) % 4;
 	}
 	return p;
@@ -164,19 +95,91 @@ Point Logic::GenerateNeighborPoint(Point p, bool snake_intersections, Point exce
 
 Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 {
-	assert(!(smart_point == food));
-	assert(!(smart_point == freezingfood.Get()));
-	assert(!PointBelongsToTheBlock(smart_point));
-	assert(PointInsideTheField(smart_point));
-	
-	bool smart_point_is_correct = ((!(smart_point == Point{ 0,0 })) && (!enemy.PointBelongsToTheEnemy(smart_point)));
+	bool smart_point_is_correct = ((smart_point != Point{ 0,0 }) && (field.Get(smart_point) != Objects::Enemy));
 	int step = rand() % 10;
 	if (smart_point_is_correct && (step <= power_of_brean_of_enemy))
-	{
 		return smart_point;
+	return GenerateNeighborPoint(enemy_coordinates, snake.GetCanBeEaten());
+}
+
+void Logic::ClearTailOfSnake(Point p)
+{
+	std::vector<Point> remove_points = snake.CutOfTail(p);
+	for (int i = 0; i < remove_points.size(); ++i)
+		field.Set(remove_points[i], Objects::Empty);
+}
+
+std::vector<Point> Logic::ShortestDirectionTowardsTheSnake()
+{
+	std::vector<Point> enemys = enemy.GetPoints();
+	std::vector<Point> snake_points = snake.GetPoints();
+	queue<Point> q;
+	std::vector<Point> res(enemys.size(), Point{ 0,0 });
+	int count = 0;
+	int snake_place = 0;
+	int block_place = -1;
+	int free_place = -3;
+	auto field_size = field.GetFieldSize();
+	std::vector<std::vector<int>> lenght(field_size.second, std::vector<int>(field_size.first, free_place));
+	lenght[food.y][food.x] = block_place;
+	lenght[freezingfood.Get().y][freezingfood.Get().x] = block_place;
+	for (short i = 0; i < block.size(); ++i)
+	{
+		lenght[block[i].y][block[i].x] = block_place;
+	}
+	for (short i = 0; i < snake.Size(); ++i)
+	{
+		lenght[snake_points[i].y][snake_points[i].x] = snake_place;
+		q.push(snake_points[i]);
+	}
+
+	for (int i = 0; i < enemys.size(); ++i)
+	{
+		assert(lenght[enemys[i].y][enemys[i].x] == free_place);
+		lenght[enemys[i].y][enemys[i].x] = -10 - i;
 	}
 	
-	return GenerateNeighborPoint(enemy_coordinates, snake.GetCanBeEaten());
+	while (!q.empty())
+	{
+		Point current_point = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
+		int cur_len = lenght[current_point.y][current_point.x] + 1;
+		q.pop();  // Удаляем первый элемент в очереди
+		bool is_first_enemy = true;
+		for (int i = 0; i < offset_points.size(); ++i)
+		{
+			Point cur_neighbor = current_point + offset_points[i];
+			if (!field.InTheField(cur_neighbor))
+				continue;
+			int& neighbor_len = lenght[cur_neighbor.y][cur_neighbor.x];
+			if (neighbor_len == block_place)
+				continue;
+			if ((neighbor_len <= -10) && (is_first_enemy))
+			{
+				int idx = static_cast<int>(fabs(neighbor_len + 10));
+				if ((res[idx].x == 0) && (res[idx].y == 0))
+				{
+					is_first_enemy = false;
+					
+					//assert((field.Get(current_point) == Objects::Empty) || (field.Get(current_point) == Objects::Snake));
+					if (field.Get(current_point) != Objects::Empty)
+					{
+						auto e = field.Get(current_point);
+						int a = 0;
+					}
+					res[idx] = current_point;
+					neighbor_len = block_place;
+					++count;
+				}
+				continue;
+			}
+			if (neighbor_len == free_place)
+			{
+				neighbor_len = cur_len;
+				q.push({ cur_neighbor.x , cur_neighbor.y });
+			}
+		}
+	}
+	return res;
 }
 
 bool Logic::MoveEnemy(int enemy_idx, Point smart_point) 
@@ -191,11 +194,9 @@ bool Logic::MoveEnemy(int enemy_idx, Point smart_point)
 		else
 			ClearTailOfSnake(new_enemy_coordinates);
 	}
-	pr.Clear(enemy_coordinates);
-			
-	//assert(DistanceBetweenPoints(enemy_coordinates, new_enemy_coordinates) == 1);
+	field.Set(enemy_coordinates, Objects::Empty);
 	enemy.Set(new_enemy_coordinates, enemy_idx);
-	pr.Print(new_enemy_coordinates, enemy_symbol);
+	field.Set(new_enemy_coordinates, Objects::Enemy);
 	return true;
 }
 
@@ -210,43 +211,40 @@ bool Logic::MoveAllEnemy()
 	return true;
 }
 
-int Logic::DistanceBetweenPoints(Point a, Point b)
+bool Logic::FieldCheck()
 {
-	return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
-}
-
-bool Logic::Run()
-{
-	Clear();
-	GenerateBlockPosition();
-	DrawTheField();
-	food = GenerateFoodPosition();
-    bool cond = true;
-    bool you_win = false;
-    char key = 0; // новое направление, в котором движется змея
-    std::thread thr1(&Logic::ThreadFunction1, *this, std::ref(key), std::ref(you_win));
-    std::thread thr2(&Logic::ThreadFunction2, *this, std::ref(key), std::ref(cond));
-
-    thr1.join();
-    cond = false;
-    Clear();
-    if(you_win == false)
-        pr.Print(level_over_point_position1, level_over1);////нужно сообщить Level
-	/////////////////////////
-   else
-        pr.Print(win_point_position, win);////нужно сообщить Level
-    pr.Print(game_over_point_position2, press_enter);
-    thr2.join();
-	return you_win;
+	auto field_size = field.GetFieldSize();
+	for (short i = 1; i < field_size.first; ++i)
+	{
+		for (short j = 1; j < field_size.second; ++j)
+		{
+			if (field.Get(Point{ i, j }) == Objects::Enemy)
+			{
+				bool flag = false;
+				for (int k = 0; k < enemy.Size(); ++k)
+				{
+					if (enemy.Get(k) == Point{ i, j })
+					{
+						flag = true;
+					}
+				}
+				if (flag == false)
+				{
+					return false;
+				}
+			}
+		}
+	}
+	return true;
 }
 
 void Logic::ThreadFunction1(char& key, bool& you_win)
 {
-    pr.Print(food, food_symbol);
-    pr.Print(snake.Head(), snake_symbol);
+	InitializeTheGame();
     Point new_pos;
 	int count = 1;
 	char new_dir = 0;
+	ofstream file("out.txt");
     while (true)
     {
 		if (key == 0)
@@ -259,10 +257,10 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		if (key == 'i')
 		{
 			Point tail = snake.Tail();
-			Point new_tail = GenerateNeighborPoint(tail, false, Change(snake.Head(), new_dir));
-			if(!(tail == new_tail))
+			Point new_tail = GenerateNeighborPoint(tail, false, MovePoint(snake.Head(), new_dir));
+			if(tail != new_tail)
 				snake.AddTail(new_tail);
-			pr.Print(new_tail, snake_symbol);
+			field.Set(new_tail, Objects::Snake);
 			if (snake.Size() == snake_size_for_win)
 			{
 				you_win = true;
@@ -274,22 +272,22 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		{
 			new_dir = key;
 		}
-        new_pos = Change(snake.Head(), new_dir);
+        new_pos = MovePoint(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
 		/////////////////freezingfood////////////////
 		if (freezingfood.NeedToGeneratePoint())
 		{
-			freezingfood.Set(GenerateFoodPosition());
-			pr.Print(freezingfood.Get(), freezingfood.GetSymbol());
+			freezingfood.Set(field.GeneratePoint());
+			field.Set(freezingfood.Get(), Objects::FoodFreezing);
 		}
 		else if (freezingfood.NeedToClear())
 		{
-			pr.Clear(freezingfood.Get());
+			field.Set(freezingfood.Get(), Objects::Empty);
 			freezingfood.Set(Point{0,0});
 		}
 		if (new_pos == freezingfood.Get())
 		{
-			pr.Clear(freezingfood.Get());
+			field.Set(freezingfood.Get(), Objects::Empty);
 			freezingfood.Set(Point{ 0,0 });
 			enemy.SetFreezing();
 		}
@@ -297,19 +295,18 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		//////////////////food_can_not_eat_snake//////////
 		if (food_can_not_eat_snake.NeedToGeneratePoint())
 		{
-			food_can_not_eat_snake.Set(GenerateFoodPosition());
-			pr.Print(food_can_not_eat_snake.Get(), food_can_not_eat_snake.GetSymbol());
+			food_can_not_eat_snake.Set(field.GeneratePoint());
+			field.Set(food_can_not_eat_snake.Get(), Objects::FoodCanNotEatSnake);
 		}
 		else if (food_can_not_eat_snake.NeedToClear())
 		{
-			pr.Clear(food_can_not_eat_snake.Get());
+			field.Set(food_can_not_eat_snake.Get(), Objects::Empty);
 			food_can_not_eat_snake.Set(Point{ 0,0 });
 		}
 		if (new_pos == food_can_not_eat_snake.Get())
 		{
-			pr.Clear(food_can_not_eat_snake.Get());
+			field.Set(food_can_not_eat_snake.Get(), Objects::Empty);
 			food_can_not_eat_snake.Set(Point{ 0,0 });
-			//enemy.SetFreezing();
 		}
 		/////////////////////////////////////////////////
 		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
@@ -319,7 +316,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		++count;
         if (new_pos == snake.Head())
             continue;
-        if (snake.PointBelongsToTheSnake(new_pos))
+        if (field.Get(new_pos) == Objects::Snake)
         {
             if (snake.PointIsSecondElemOfSnake(new_pos))
                 continue;
@@ -327,7 +324,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
                 return;
         }
 		
-		if (enemy.PointBelongsToTheEnemy(new_pos))
+		if (field.Get(new_pos) == Objects::Enemy)
 			return;
 
         if (food == new_pos)
@@ -338,16 +335,16 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
                 you_win = true;
                 return;
             }
-            food = GenerateFoodPosition();
-            pr.Print(food, food_symbol);
+            food = field.GeneratePoint();
+			field.Set(food, Objects::Food);
         }
         else
         {
             Point tail = snake.Tail();
             snake.Move(new_pos);
-            pr.Clear(tail);
+			field.Set(tail, Objects::Empty);
         }
-        pr.Print(new_pos, snake_symbol);	
+		field.Set(new_pos, Objects::Snake);
     }
 }
 
@@ -364,123 +361,19 @@ void Logic::ThreadFunction2(char& key, bool& cond)
     } 
 }
 
-void Logic::Clear()
-{
-    for (short i = 1; i < height; ++i)
-    {
-        for (short j = 1; j < width; ++j)
-        {
-            pr.Clear({ j, i });
-        }
-    }
-}
-
-void Logic::ClearTailOfSnake(Point p)
-{
-	std::vector<Point> remove_points = snake.CutOfTail(p);
-	for (int i = 0; i < remove_points.size(); ++i)
-		pr.Clear(remove_points[i]);
-}
-
-
-bool Logic::PointInsideTheField(Point p)
-{
-	bool left = (p.x > 0);
-	bool right = (p.x < width);
-	bool up = (p.y  < height);
-	bool down = (p.y > 0);
-	if (left && right && up && down)
-		return true;
-	return false;
-}
-
- std::vector<Point> Logic::ShortestDirectionTowardsTheSnake()
-{
-	std::vector<Point> enemys = enemy.GetPoints();
-	std::vector<Point> snake_points = snake.GetPoints();
-	queue<Point> q; 
-	std::vector<Point> res(enemys.size(), Point{ 0,0 });
-	int count = 0;
-	int snake_place = 0;
-	int block_place = -1;
-	int free_place = -3;
-
-	std::vector<std::vector<int>> lenght(height);
-	for (int i = 0; i < height; ++i)
-		lenght[i].resize(width, free_place);
-
-	lenght[food.y][food.x] = block_place;
-	lenght[freezingfood.Get().y][freezingfood.Get().x] = block_place;
-	for (short i = 0; i < block.size(); ++i)
-	{
-		lenght[block[i].y][block[i].x] = block_place;
-	}
-	for (short i = 0; i < snake.Size(); ++i)
-	{
-		lenght[snake_points[i].y][snake_points[i].x] = snake_place;
-		q.push(snake_points[i]);
-	}
-	
-	for (int i = 0; i < enemys.size(); ++i)
-	{
-		assert(lenght[enemys[i].y][enemys[i].x] == free_place);
-		lenght[enemys[i].y][enemys[i].x] = -10 - i;
-	}
-	
-	while (!q.empty())
-	{
-		Point current_point = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
-		int cur_len = lenght[current_point.y][current_point.x] + 1;
-		q.pop();  // Удаляем первый элемент в очереди
-		bool is_first_enemy = true;
-		for (int i = 0; i < offset_points.size(); ++i)
-		{
-			Point cur_neighbor = current_point + offset_points[i];
-			if (!PointInsideTheField(cur_neighbor))
-				continue;
-			int& neighbor_len = lenght[cur_neighbor.y][cur_neighbor.x];
-			if (neighbor_len == block_place)
-				continue;
-			if ((neighbor_len <= -10)&&(is_first_enemy))
-			{
-				int idx = fabs(neighbor_len + 10);
-				if ((res[idx].x == 0) && (res[idx].y == 0))
-				{
-					is_first_enemy = false;
-					assert(!(current_point == food));
-					assert(!PointBelongsToTheBlock(current_point));
-					assert(!enemy.PointBelongsToTheEnemy(current_point));
-					//////////////////////
-					res[idx] = current_point;
-					neighbor_len = block_place;
-					++count;
-				}
-				continue;
-			}
-			if (neighbor_len == free_place)
-			{
-				neighbor_len = cur_len;
-				q.push({ cur_neighbor.x , cur_neighbor.y });
-			}
-		}
-	}
-	Point zero = Point{ 0, 0 };
-	for (int i = 0; i < res.size(); ++i)
-	{
-		if (res[i] == zero)
-		{
-			int a = 0;
-		}
-
-	}
-	return res;
-}
-
- void Logic::IncreaseSnake()
+ bool Logic::Run()
  {
-	 return;
+	 bool cond = true;
+	 bool you_win = false;
+	 char key = 0; // новое направление, в котором движется змея
+	 std::thread thr1(&Logic::ThreadFunction1, *this, std::ref(key), std::ref(you_win));
+	 std::thread thr2(&Logic::ThreadFunction2, *this, std::ref(key), std::ref(cond));
+	 thr1.join();
+	 cond = false;
+	 if (you_win == false)
+		 field.PrintLevelOver();
+	 else
+		 field.PrintWin();
+	 thr2.join();
+	 return you_win;
  }
-
-
-
- //В момент, когда змею нельзя есть, нужно сообщить это врагам. Т.е в GenerateNeighborPoint добавить проверку
