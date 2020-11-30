@@ -3,6 +3,7 @@
 #include<vector>
 #include"Point.h"
 #include <ctime>
+#include"Field.h"
 class Snake
 {
     std::vector<Point> points;
@@ -10,8 +11,9 @@ class Snake
 	bool can_be_eaten = true;
 	unsigned int start_time = clock();
 	time_t time_can_not_be_eaten = 5000;
+	Field& field;
 public:
-    Snake(Point p);
+    Snake(Point p, Field& field_);
     Point Head();
     Point Tail();
 	bool CheckProximityOfPoints(Point p1, Point p2);

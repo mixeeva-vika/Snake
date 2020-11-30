@@ -7,7 +7,7 @@
 #include<iostream>
 
 Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_):
-	snake(snake_start_position) , 
+	snake(snake_start_position, field), 
     count_of_enemy(count_of_enemy_), 
 	count_of_block(count_of_block_),
 	power_of_brean_of_enemy(power_of_brean_of_enemy_),
@@ -341,11 +341,8 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
         }
         else
         {
-            Point tail = snake.Tail();
             snake.Move(new_pos);
-			field.Set(tail, Objects::Empty);
         }
-		field.Set(new_pos, Objects::Snake);
     }
 	
 }

@@ -2,7 +2,7 @@
 #include"PrintHelper.h"
 #include <assert.h>
 
-Snake::Snake(Point p)
+Snake::Snake(Point p, Field& field_) : field(field_)
 {
     const int size = 1;
     points.resize(size);
@@ -41,10 +41,11 @@ void Snake::Move(Point p)
 
     if ((points.size() > 1) && (points[1].x == p.x) && (points[1].y == p.y))
         return;
-
+	field.Set(Tail(), Objects::Empty);
     points.emplace(points.begin(), p);
     points.pop_back();
-
+	
+    field.Set(p, Objects::Snake);
 }
 
 void Snake::Add(Point p)
@@ -52,6 +53,7 @@ void Snake::Add(Point p)
     assert(CheckProximityOfPoints(p, points[0]));
     
     points.emplace(points.begin(), p);
+	field.Set(p, Objects::Snake);
 }
 
 void Snake::AddTail(Point p)
