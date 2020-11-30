@@ -1,9 +1,9 @@
 #include"Enemy.h"
 #include"PrintHelper.h"
 
-Enemy::Enemy(int size)
+Enemy::Enemy(int size, Field& field_): field(field_)
 {
-	points.resize(size);
+	points.resize(size, {0, 0});
 }
 
 bool Enemy::PointBelongsToTheEnemy(Point p)
@@ -28,7 +28,12 @@ int Enemy::Size()
 
 void Enemy::Set(Point p, int idx)
 {
+	if (points[idx] != Point{0, 0})
+	{
+		field.Set(points[idx], Objects::Empty);
+	}
 	points[idx] = p;
+	field.Set(p, Objects::Enemy);
 }
 
 const std::vector<Point>& Enemy::GetPoints()

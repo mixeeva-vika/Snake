@@ -3,6 +3,7 @@
 #include<vector>
 #include <ctime>
 #include"Point.h"
+#include"Field.h"
  
 class Enemy
 {
@@ -12,8 +13,9 @@ class Enemy
 	bool can_be_eaten = false;
 	unsigned int start_freezing_time = clock();
 	time_t freezing_time = 5000;
+	Field& field;
 public: 
-	Enemy(int size);
+	Enemy(int size, Field& field_);
 	bool PointBelongsToTheEnemy(Point p);
 	Point Get(int idx);
 	int Size();

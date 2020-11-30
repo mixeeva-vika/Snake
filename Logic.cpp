@@ -11,10 +11,10 @@ Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_
     count_of_enemy(count_of_enemy_), 
 	count_of_block(count_of_block_),
 	power_of_brean_of_enemy(power_of_brean_of_enemy_),
-	enemy(count_of_enemy)
+	enemy(count_of_enemy, field),
+	freezingfood(field)
 {
      srand(static_cast<unsigned int>(time(0)));
-	 GenerateEnemyPosition();
 	 block.resize(count_of_block); 
 }
 
@@ -46,7 +46,6 @@ void Logic::GenerateEnemyPosition()
 			assert(new_pos != enemy.Get(j));
 		}
 		enemy.Set(new_pos, i);
-		field.Set(new_pos, Objects::Enemy);
 	}
 }
 
@@ -186,7 +185,6 @@ bool Logic::MoveEnemy(int enemy_idx, Point smart_point)
 {
 	Point enemy_coordinates = enemy.Get(enemy_idx);
 	Point new_enemy_coordinates = NewEnemyPosition(enemy_coordinates, smart_point);
-	
 	if (snake.PointBelongsToTheSnake(new_enemy_coordinates))
 	{
 		if (new_enemy_coordinates == snake.Head())
@@ -194,9 +192,7 @@ bool Logic::MoveEnemy(int enemy_idx, Point smart_point)
 		else
 			ClearTailOfSnake(new_enemy_coordinates);
 	}
-	field.Set(enemy_coordinates, Objects::Empty);
 	enemy.Set(new_enemy_coordinates, enemy_idx);
-	field.Set(new_enemy_coordinates, Objects::Enemy);
 	return true;
 }
 
@@ -230,9 +226,17 @@ bool Logic::FieldCheck()
 				}
 				if (flag == false)
 				{
-					return false;
+					int a = 0;
+					//return false;
 				}
 			}
+		}
+	}
+	for (int i = 0; i < enemy.Size(); ++i)
+	{
+		if (field.Get(enemy.Get(i)) != Objects::Enemy)
+		{
+			int a = 0;
 		}
 	}
 	return true;
@@ -278,16 +282,13 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		if (freezingfood.NeedToGeneratePoint())
 		{
 			freezingfood.Set(field.GeneratePoint());
-			field.Set(freezingfood.Get(), Objects::FoodFreezing);
 		}
 		else if (freezingfood.NeedToClear())
 		{
-			field.Set(freezingfood.Get(), Objects::Empty);
 			freezingfood.Set(Point{0,0});
 		}
 		if (new_pos == freezingfood.Get())
 		{
-			field.Set(freezingfood.Get(), Objects::Empty);
 			freezingfood.Set(Point{ 0,0 });
 			enemy.SetFreezing();
 		}
@@ -346,6 +347,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
         }
 		field.Set(new_pos, Objects::Snake);
     }
+	
 }
 
 void Logic::ThreadFunction2(char& key, bool& cond)
@@ -366,8 +368,8 @@ void Logic::ThreadFunction2(char& key, bool& cond)
 	 bool cond = true;
 	 bool you_win = false;
 	 char key = 0; // новое направление, в котором движется змея
-	 std::thread thr1(&Logic::ThreadFunction1, *this, std::ref(key), std::ref(you_win));
-	 std::thread thr2(&Logic::ThreadFunction2, *this, std::ref(key), std::ref(cond));
+	 std::thread thr1(&Logic::ThreadFunction1, this, std::ref(key), std::ref(you_win));
+	 std::thread thr2(&Logic::ThreadFunction2, this, std::ref(key), std::ref(cond));
 	 thr1.join();
 	 cond = false;
 	 if (you_win == false)

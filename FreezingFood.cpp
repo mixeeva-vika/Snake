@@ -7,6 +7,14 @@ Point FreezingFood::Get()
 void FreezingFood::Set(const Point& p)
 {
 	start_time_or_disappearance_time = clock();
+	if (p != Point{ 0, 0 })
+	{
+		field.Set(p, Objects::FoodFreezing);
+	}
+	else
+	{
+		field.Set(freezing_food, Objects::Empty);
+	}
 	freezing_food = p;
 }
 
