@@ -17,7 +17,7 @@ void Level::Levels()
 	{
 		bool success = false;
 		int lifes = 0;
-		Logic l(10 + i, i + 3, i, i);
+		Logic l(10 + i, i + 3, i, i + 5);
 		for (int j = 0; j < count_of_lifes; ++j)
 		{
 			field.Clear();

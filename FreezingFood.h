@@ -11,11 +11,13 @@ class FreezingFood
 	time_t time_in_the_field = 9000;
 	time_t time_away_from_the_field = 6000;
 	Field& field;
+
+	bool NeedToGeneratePoint();
+	bool NeedToClear();
 public:
 	FreezingFood(Field& field_) : field(field_){}
 	Point Get();
 	void Set(const Point& p);
-	bool NeedToGeneratePoint();
-	bool NeedToClear();
 	const char GetSymbol();
+	void Action();
 };

@@ -10,7 +10,7 @@ class Snake
 	bool freezing = false;
 	bool can_be_eaten = true;
 	unsigned int start_time = clock();
-	time_t time_can_not_be_eaten = 5000;
+	time_t time_can_not_be_eaten = 10000;
 	Field& field;
 public:
     Snake(Point p, Field& field_);
@@ -20,7 +20,6 @@ public:
     void Move(Point p);
     void Add(Point p);
 	void AddTail(Point p);
-	void Cut(Point p);
     bool PointBelongsToTheSnake(Point p);
     bool PointIsSecondElemOfSnake(Point p);
     int Size();
@@ -30,6 +29,6 @@ public:
 	bool GetFreezing();
 	void SetFreezing(bool freez);
 	bool GetCanBeEaten();
-	void SetCanBeEaten(bool can_be_eaten_);
+	void SetCanBeEaten();
 
 };

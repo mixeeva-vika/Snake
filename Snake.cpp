@@ -34,6 +34,8 @@ bool Snake::CheckProximityOfPoints(Point p1, Point p2)
 
 void Snake::Move(Point p)
 {
+	if ((can_be_eaten == false) && (field.Get(p) == Objects::Enemy))
+		return;
     if ((points[0].x == p.x) && (points[0].y == p.y))
         return;
 
@@ -65,10 +67,6 @@ void Snake::AddTail(Point p)
 
 }
 
-void Snake::Cut(Point p)
-{
-	return;
-}
 
 bool Snake::PointBelongsToTheSnake(Point p)
 {
@@ -136,9 +134,8 @@ bool Snake::GetCanBeEaten()
 	}
 	return can_be_eaten;
 }
-void Snake::SetCanBeEaten(bool can_be_eaten_)
+void Snake::SetCanBeEaten()
 {
-	if(can_be_eaten_ == false)
-		start_time = clock();
-	can_be_eaten = can_be_eaten_;
+	can_be_eaten = false;
+	start_time = clock();
 }

@@ -7,6 +7,14 @@ Point FoodCanNotEatSnake::Get()
 void FoodCanNotEatSnake::Set(const Point& p)
 {
 	start_time_or_disappearance_time = clock();
+	if (p != Point{ 0, 0 })
+	{
+		field.Set(p, Objects::FoodCanNotEatSnake);
+	}
+	else
+	{
+		field.Set(food_can_not_eat_snake, Objects::Empty);
+	}
 	food_can_not_eat_snake = p;
 }
 
@@ -34,4 +42,19 @@ bool FoodCanNotEatSnake::NeedToClear()
 const char FoodCanNotEatSnake::GetSymbol()
 {
 	return food_can_not_eat_snake_symbol;
+}
+
+void FoodCanNotEatSnake::Action()
+{
+	if (NeedToGeneratePoint())
+	{
+		//food_can_not_eat_snake.Set(field.GeneratePoint());
+		Set(Point{ 44, 10 });
+		field.Set(food_can_not_eat_snake, Objects::FoodCanNotEatSnake);
+	}
+	else if (NeedToClear())
+	{
+		field.Set(food_can_not_eat_snake, Objects::Empty);
+		Set(Point{ 0,0 });
+	}
 }

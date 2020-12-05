@@ -12,7 +12,8 @@ Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_
 	count_of_block(count_of_block_),
 	power_of_brean_of_enemy(power_of_brean_of_enemy_),
 	enemy(count_of_enemy, field),
-	freezingfood(field)
+	freezingfood(field),
+	food_can_not_eat_snake(field)
 {
      srand(static_cast<unsigned int>(time(0)));
 	 block.resize(count_of_block); 
@@ -94,7 +95,7 @@ Point Logic::GenerateNeighborPoint(Point p, bool snake_intersections, Point exce
 
 Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 {
-	bool smart_point_is_correct = ((smart_point != Point{ 0,0 }) && (field.Get(smart_point) != Objects::Enemy));
+	bool smart_point_is_correct = ((smart_point != Point{ 0,0 }) && (field.Get(smart_point) != Objects::Enemy) && (snake.GetCanBeEaten() || field.Get(smart_point) != Objects::Snake));
 	int step = rand() % 10;
 	if (smart_point_is_correct && (step <= power_of_brean_of_enemy))
 		return smart_point;
@@ -185,6 +186,7 @@ bool Logic::MoveEnemy(int enemy_idx, Point smart_point)
 {
 	Point enemy_coordinates = enemy.Get(enemy_idx);
 	Point new_enemy_coordinates = NewEnemyPosition(enemy_coordinates, smart_point);
+	assert(snake.GetCanBeEaten() || field.Get(new_enemy_coordinates) != Objects::Snake);
 	if (snake.PointBelongsToTheSnake(new_enemy_coordinates))
 	{
 		if (new_enemy_coordinates == snake.Head())
@@ -279,14 +281,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
         new_pos = MovePoint(snake.Head(), new_dir);
         std::this_thread::sleep_for(200ms);
 		/////////////////freezingfood////////////////
-		if (freezingfood.NeedToGeneratePoint())
-		{
-			freezingfood.Set(field.GeneratePoint());
-		}
-		else if (freezingfood.NeedToClear())
-		{
-			freezingfood.Set(Point{0,0});
-		}
+		freezingfood.Action();
 		if (new_pos == freezingfood.Get())
 		{
 			freezingfood.Set(Point{ 0,0 });
@@ -294,20 +289,11 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 		}
 		/////////////////////////////////////////////////
 		//////////////////food_can_not_eat_snake//////////
-		if (food_can_not_eat_snake.NeedToGeneratePoint())
-		{
-			food_can_not_eat_snake.Set(field.GeneratePoint());
-			field.Set(food_can_not_eat_snake.Get(), Objects::FoodCanNotEatSnake);
-		}
-		else if (food_can_not_eat_snake.NeedToClear())
-		{
-			field.Set(food_can_not_eat_snake.Get(), Objects::Empty);
-			food_can_not_eat_snake.Set(Point{ 0,0 });
-		}
+		food_can_not_eat_snake.Action();
 		if (new_pos == food_can_not_eat_snake.Get())
 		{
-			field.Set(food_can_not_eat_snake.Get(), Objects::Empty);
 			food_can_not_eat_snake.Set(Point{ 0,0 });
+			snake.SetCanBeEaten();
 		}
 		/////////////////////////////////////////////////
 		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
@@ -325,7 +311,7 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
                 return;
         }
 		
-		if (field.Get(new_pos) == Objects::Enemy)
+		if ((field.Get(new_pos) == Objects::Enemy) && snake.GetCanBeEaten())
 			return;
 
         if (food == new_pos)

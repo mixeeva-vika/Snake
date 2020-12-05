@@ -43,3 +43,15 @@ const char FreezingFood::GetSymbol()
 {
 	return freezing_food_symbol;
 }
+
+void FreezingFood::Action()
+{
+	if (NeedToGeneratePoint())
+	{
+		Set(field.GeneratePoint());
+	}
+	else if (NeedToClear())
+	{
+		Set(Point{ 0,0 });
+	}
+}
