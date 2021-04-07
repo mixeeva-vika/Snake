@@ -1,5 +1,10 @@
 #include "FreezingFood.h"
 
+FreezingFood::FreezingFood(Field& field_, EventManager& event_manager_) : field(field_), event_manager(event_manager_)
+{
+	event_manager.SubscribeOnEvent(this, SnakeEatFoodFreezing);
+}
+
 Point FreezingFood::Get()
 {
 	return freezing_food;
@@ -54,4 +59,14 @@ void FreezingFood::Action()
 	{
 		Set(Point{ 0,0 });
 	}
+}
+
+void FreezingFood::OnEvent(EventType et)
+{
+	if (et == EventType::SnakeEatFoodFreezing)
+	{
+		Set(Point{ 0,0 });
+		return;
+	}
+	throw;
 }

@@ -20,6 +20,7 @@ class Logic
 	std::vector<Point> offset_points = { { 1,0 },{ -1,0 },{ 0,1 },{ 0,-1 } };
 
 	Field field;
+	EventManager event_manager;
     Snake snake;
 	Enemy enemy;
     Point food;
@@ -34,7 +35,6 @@ class Logic
 	Point GenerateNeighborPoint(Point p, bool snake_intersections = true, Point exceptional_point = { 0, 0 });
 	Point NewEnemyPosition(Point enemy_coordinates, Point smart_point);
 	void ClearTailOfSnake(Point p);
-	std::vector<Point> Logic::ShortestDirectionTowardsTheSnake();
 	bool MoveEnemy(int idx, Point smart_point);
 	bool MoveAllEnemy();
 	bool FieldCheck();

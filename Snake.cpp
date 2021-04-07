@@ -2,8 +2,13 @@
 #include"PrintHelper.h"
 #include <assert.h>
 
-Snake::Snake(Point p, Field& field_) : field(field_)
+Snake::Snake(Point p, Field& field_, EventManager& event_manager_) : field(field_), event_manager(event_manager_)
 {
+	event_manager.SubscribeOnEvent(this, SnakeEatFood);
+	event_manager.SubscribeOnEvent(this, EnemyCrossWithSnake);
+	event_manager.SubscribeOnEvent(this, SnakeEatFoodFreezing);
+	event_manager.SubscribeOnEvent(this, SnakeEatFoodCanNotEatSnake);
+
     const int size = 1;
     points.resize(size);
     for (int i = 0; i < size; ++i)
@@ -138,4 +143,20 @@ void Snake::SetCanBeEaten()
 {
 	can_be_eaten = false;
 	start_time = clock();
+}
+
+void Snake::OnEvent(EventType et)
+{
+	if (et == EventType::EnemyCrossWithSnake)
+	{
+
+		return;
+	}
+	if (et == EventType::SnakeEatFoodCanNotEatSnake)
+	{
+		SetCanBeEaten();
+		return;
+	}
+
+	throw;
 }

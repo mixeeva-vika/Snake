@@ -1,19 +1,18 @@
 #include"Logic.h"
 #include <thread>
 #include <chrono>
-#include <queue>
 #include <fstream>
 #include <assert.h>
 #include<iostream>
 
 Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_):
-	snake(snake_start_position, field), 
+	snake(snake_start_position, field, event_manager),
     count_of_enemy(count_of_enemy_), 
 	count_of_block(count_of_block_),
 	power_of_brean_of_enemy(power_of_brean_of_enemy_),
-	enemy(count_of_enemy, field),
-	freezingfood(field),
-	food_can_not_eat_snake(field)
+	enemy(count_of_enemy, field, event_manager),
+	freezingfood(field, event_manager),
+	food_can_not_eat_snake(field, event_manager)
 {
      srand(static_cast<unsigned int>(time(0)));
 	 block.resize(count_of_block); 
@@ -109,79 +108,6 @@ void Logic::ClearTailOfSnake(Point p)
 		field.Set(remove_points[i], Objects::Empty);
 }
 
-std::vector<Point> Logic::ShortestDirectionTowardsTheSnake()
-{
-	std::vector<Point> enemys = enemy.GetPoints();
-	std::vector<Point> snake_points = snake.GetPoints();
-	queue<Point> q;
-	std::vector<Point> res(enemys.size(), Point{ 0,0 });
-	int count = 0;
-	int snake_place = 0;
-	int block_place = -1;
-	int free_place = -3;
-	auto field_size = field.GetFieldSize();
-	std::vector<std::vector<int>> lenght(field_size.second, std::vector<int>(field_size.first, free_place));
-	lenght[food.y][food.x] = block_place;
-	lenght[freezingfood.Get().y][freezingfood.Get().x] = block_place;
-	for (short i = 0; i < block.size(); ++i)
-	{
-		lenght[block[i].y][block[i].x] = block_place;
-	}
-	for (short i = 0; i < snake.Size(); ++i)
-	{
-		lenght[snake_points[i].y][snake_points[i].x] = snake_place;
-		q.push(snake_points[i]);
-	}
-
-	for (int i = 0; i < enemys.size(); ++i)
-	{
-		assert(lenght[enemys[i].y][enemys[i].x] == free_place);
-		lenght[enemys[i].y][enemys[i].x] = -10 - i;
-	}
-	
-	while (!q.empty())
-	{
-		Point current_point = q.front(); // Берем первый элемент в очереди(нужен указатель на первый элемент очередио)
-		int cur_len = lenght[current_point.y][current_point.x] + 1;
-		q.pop();  // Удаляем первый элемент в очереди
-		bool is_first_enemy = true;
-		for (int i = 0; i < offset_points.size(); ++i)
-		{
-			Point cur_neighbor = current_point + offset_points[i];
-			if (!field.InTheField(cur_neighbor))
-				continue;
-			int& neighbor_len = lenght[cur_neighbor.y][cur_neighbor.x];
-			if (neighbor_len == block_place)
-				continue;
-			if ((neighbor_len <= -10) && (is_first_enemy))
-			{
-				int idx = static_cast<int>(fabs(neighbor_len + 10));
-				if ((res[idx].x == 0) && (res[idx].y == 0))
-				{
-					is_first_enemy = false;
-					
-					//assert((field.Get(current_point) == Objects::Empty) || (field.Get(current_point) == Objects::Snake));
-					if (field.Get(current_point) != Objects::Empty)
-					{
-						auto e = field.Get(current_point);
-						int a = 0;
-					}
-					res[idx] = current_point;
-					neighbor_len = block_place;
-					++count;
-				}
-				continue;
-			}
-			if (neighbor_len == free_place)
-			{
-				neighbor_len = cur_len;
-				q.push({ cur_neighbor.x , cur_neighbor.y });
-			}
-		}
-	}
-	return res;
-}
-
 bool Logic::MoveEnemy(int enemy_idx, Point smart_point) 
 {
 	Point enemy_coordinates = enemy.Get(enemy_idx);
@@ -200,7 +126,7 @@ bool Logic::MoveEnemy(int enemy_idx, Point smart_point)
 
 bool Logic::MoveAllEnemy()
 {
-	std::vector<Point> smart_position = ShortestDirectionTowardsTheSnake();
+	std::vector<Point> smart_position = enemy.ShortestDirectionTowardsTheSnake();
 	for (int i = 0; i < enemy.Size(); ++i)
 	{
 		if (MoveEnemy(i, smart_position[i]) == false)
@@ -282,19 +208,18 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
         std::this_thread::sleep_for(200ms);
 		/////////////////freezingfood////////////////
 		freezingfood.Action();
-		if (new_pos == freezingfood.Get())
+		if (field.Get(new_pos) == Objects::FoodFreezing)
 		{
-			freezingfood.Set(Point{ 0,0 });
-			enemy.SetFreezing();
+			event_manager.PushEvent(SnakeEatFoodFreezing);
 		}
 		/////////////////////////////////////////////////
 		//////////////////food_can_not_eat_snake//////////
 		food_can_not_eat_snake.Action();
-		if (new_pos == food_can_not_eat_snake.Get())
+		if (field.Get(new_pos) == Objects::FoodCanNotEatSnake)
 		{
-			food_can_not_eat_snake.Set(Point{ 0,0 });
-			snake.SetCanBeEaten();
+			event_manager.PushEvent(SnakeEatFoodCanNotEatSnake);
 		}
+		event_manager.EventHandler();
 		/////////////////////////////////////////////////
 		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
 		{

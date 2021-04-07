@@ -1,5 +1,10 @@
 #include "FoodCanNotEatSnake.h"
 
+FoodCanNotEatSnake::FoodCanNotEatSnake(Field& field_, EventManager& event_manager_) : field(field_), event_manager(event_manager_)
+{
+	event_manager.SubscribeOnEvent(this, SnakeEatFoodCanNotEatSnake);
+}
+
 Point FoodCanNotEatSnake::Get()
 {
 	return food_can_not_eat_snake;
@@ -57,4 +62,14 @@ void FoodCanNotEatSnake::Action()
 		field.Set(food_can_not_eat_snake, Objects::Empty);
 		Set(Point{ 0,0 });
 	}
+}
+
+void FoodCanNotEatSnake::OnEvent(EventType et)
+{
+	if (et == EventType::SnakeEatFoodCanNotEatSnake)
+	{
+		Set(Point{ 0,0 });
+		return;
+	}
+	throw;
 }

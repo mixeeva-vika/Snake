@@ -111,6 +111,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="EventManager.cpp" />
     <ClCompile Include="Field.cpp" />
     <ClCompile Include="FoodCanNotEatSnake.cpp" />
     <ClCompile Include="FreezingFood.cpp" />
@@ -121,6 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="EventManager.h" />
+    <ClInclude Include="EventSubscriber.h" />
     <ClInclude Include="Field.h" />
     <ClInclude Include="FoodCanNotEatSnake.h" />
     <ClInclude Include="FreezingFood.h" />
