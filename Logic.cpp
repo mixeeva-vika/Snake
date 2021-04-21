@@ -6,16 +6,21 @@
 #include<iostream>
 
 Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_):
-	snake(snake_start_position, field, event_manager),
+	snake(field, event_manager),
     count_of_enemy(count_of_enemy_), 
 	count_of_block(count_of_block_),
 	power_of_brean_of_enemy(power_of_brean_of_enemy_),
 	enemy(count_of_enemy, field, event_manager),
 	freezingfood(field, event_manager),
-	food_can_not_eat_snake(field, event_manager)
+	food_can_not_eat_snake(field, event_manager),
+	food(field, event_manager)
 {
-     srand(static_cast<unsigned int>(time(0)));
-	 block.resize(count_of_block); 
+	event_manager.SubscribeOnEvent(this, EventType::Win);
+	event_manager.SubscribeOnEvent(this, EventType::Losing);
+
+    srand(static_cast<unsigned int>(time(0)));
+	block.resize(count_of_block); 
+	game_state = GameState::Continue;
 }
 
 Logic::~Logic()
@@ -37,10 +42,10 @@ void Logic::GenerateEnemyPosition()
 	for (int i = 0; i < count_of_enemy; ++i)
 	{
 		Point new_pos;
-		do
-		{
+		//do
+		//{
 			new_pos = field.GeneratePoint();
-		} while (new_pos.Distance(snake_start_position) < 5);
+		//} while (new_pos.Distance(snake.Head()) < 5);
 		for (int j = 0; j < i; ++j)
 		{
 			assert(new_pos != enemy.Get(j));
@@ -55,26 +60,28 @@ void Logic::InitializeTheGame()
 	field.DrawTheFieldBoundary();
 	GenerateBlockPosition();
 	GenerateEnemyPosition();
-	food = field.GeneratePoint();
-	field.Set(food, Objects::Food);
-	field.Set(snake.Head(), Objects::Snake);
+	snake.Action();
 }
 
-Point Logic::MovePoint(Point p, char c)
+void Logic::GenerateMoveEvent(char c)
 {
-	Point diff;
-    if (c == 'a')
-		diff = { -1, 0 };
-    if (c == 'w')
-		diff = { 0, -1 };
-    if (c == 'd')
-		diff = { 1, 0 };
+	if (c == 'a')
+	{ 
+		event_manager.PushEvent(EventType::MoveLeft);
+	}
+	if (c == 'w')
+	{
+		event_manager.PushEvent(EventType::MoveUp);
+	}
+	if (c == 'd')
+	{
+		event_manager.PushEvent(EventType::MoveRight);
+	}
 	if (c == 's')
-		diff = { 0, 1 };
-	Point new_point = p + diff;
-	if (field.InTheField(new_point) && (field.Get(new_point) != Objects::Block))
-		return new_point;
-    return p;
+	{
+		event_manager.PushEvent(EventType::MoveDown);
+	}	
+
 }
 
 Point Logic::GenerateNeighborPoint(Point p, bool snake_intersections, Point exceptional_point)
@@ -101,13 +108,6 @@ Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
 	return GenerateNeighborPoint(enemy_coordinates, snake.GetCanBeEaten());
 }
 
-void Logic::ClearTailOfSnake(Point p)
-{
-	std::vector<Point> remove_points = snake.CutOfTail(p);
-	for (int i = 0; i < remove_points.size(); ++i)
-		field.Set(remove_points[i], Objects::Empty);
-}
-
 bool Logic::MoveEnemy(int enemy_idx, Point smart_point) 
 {
 	Point enemy_coordinates = enemy.Get(enemy_idx);
@@ -118,7 +118,7 @@ bool Logic::MoveEnemy(int enemy_idx, Point smart_point)
 		if (new_enemy_coordinates == snake.Head())
 			return false;
 		else
-			ClearTailOfSnake(new_enemy_coordinates);
+			snake.CutOfTail(new_enemy_coordinates);
 	}
 	enemy.Set(new_enemy_coordinates, enemy_idx);
 	return true;
@@ -135,57 +135,23 @@ bool Logic::MoveAllEnemy()
 	return true;
 }
 
-bool Logic::FieldCheck()
-{
-	auto field_size = field.GetFieldSize();
-	for (short i = 1; i < field_size.first; ++i)
-	{
-		for (short j = 1; j < field_size.second; ++j)
-		{
-			if (field.Get(Point{ i, j }) == Objects::Enemy)
-			{
-				bool flag = false;
-				for (int k = 0; k < enemy.Size(); ++k)
-				{
-					if (enemy.Get(k) == Point{ i, j })
-					{
-						flag = true;
-					}
-				}
-				if (flag == false)
-				{
-					int a = 0;
-					//return false;
-				}
-			}
-		}
-	}
-	for (int i = 0; i < enemy.Size(); ++i)
-	{
-		if (field.Get(enemy.Get(i)) != Objects::Enemy)
-		{
-			int a = 0;
-		}
-	}
-	return true;
-}
-
-void Logic::ThreadFunction1(char& key, bool& you_win)
+void Logic::ThreadFunction1(char& key)
 {
 	InitializeTheGame();
     Point new_pos;
 	int count = 1;
 	char new_dir = 0;
 	ofstream file("out.txt");
-    while (true)
+    while (game_state == GameState::Continue)
     {
 		if (key == 0)
 			continue;
 		if (key == 'n')
 		{
-			you_win = true;
+			game_state = GameState::Win;
 			return;
 		}
+		/*
 		if (key == 'i')
 		{
 			Point tail = snake.Tail();
@@ -195,67 +161,29 @@ void Logic::ThreadFunction1(char& key, bool& you_win)
 			field.Set(new_tail, Objects::Snake);
 			if (snake.Size() == snake_size_for_win)
 			{
-				you_win = true;
+				game_state = GameState::Win;
 				return;
 			}
 			key = new_dir;
 		}
+		*/
 		if ((key != 'n') && (key != 'i'))
 		{
 			new_dir = key;
 		}
-        new_pos = MovePoint(snake.Head(), new_dir);
+        GenerateMoveEvent(new_dir);
         std::this_thread::sleep_for(200ms);
-		/////////////////freezingfood////////////////
+		snake.Action();
+		food.Action();
 		freezingfood.Action();
-		if (field.Get(new_pos) == Objects::FoodFreezing)
-		{
-			event_manager.PushEvent(SnakeEatFoodFreezing);
-		}
-		/////////////////////////////////////////////////
-		//////////////////food_can_not_eat_snake//////////
 		food_can_not_eat_snake.Action();
-		if (field.Get(new_pos) == Objects::FoodCanNotEatSnake)
-		{
-			event_manager.PushEvent(SnakeEatFoodCanNotEatSnake);
-		}
-		event_manager.EventHandler();
-		/////////////////////////////////////////////////
 		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
 		{
 			return;
 		}
 		++count;
-        if (new_pos == snake.Head())
-            continue;
-        if (field.Get(new_pos) == Objects::Snake)
-        {
-            if (snake.PointIsSecondElemOfSnake(new_pos))
-                continue;
-            else
-                return;
-        }
-		
-		if ((field.Get(new_pos) == Objects::Enemy) && snake.GetCanBeEaten())
-			return;
-
-        if (food == new_pos)
-        {
-            snake.Add(new_pos);
-            if (snake.Size() == snake_size_for_win)
-            {
-                you_win = true;
-                return;
-            }
-            food = field.GeneratePoint();
-			field.Set(food, Objects::Food);
-        }
-        else
-        {
-            snake.Move(new_pos);
-        }
+		event_manager.EventHandler();
     }
-	
 }
 
 void Logic::ThreadFunction2(char& key, bool& cond)
@@ -274,16 +202,28 @@ void Logic::ThreadFunction2(char& key, bool& cond)
  bool Logic::Run()
  {
 	 bool cond = true;
-	 bool you_win = false;
+	 //bool you_win = false;
 	 char key = 0; // новое направление, в котором движется змея
-	 std::thread thr1(&Logic::ThreadFunction1, this, std::ref(key), std::ref(you_win));
+	 std::thread thr1(&Logic::ThreadFunction1, this, std::ref(key));
 	 std::thread thr2(&Logic::ThreadFunction2, this, std::ref(key), std::ref(cond));
 	 thr1.join();
 	 cond = false;
-	 if (you_win == false)
+	 if (game_state == GameState::Losing)
 		 field.PrintLevelOver();
 	 else
 		 field.PrintWin();
 	 thr2.join();
-	 return you_win;
+	 return game_state == GameState::Win;
+ }
+
+ void Logic::OnEvent(EventType et)
+ {
+	 if (et == EventType::Win)
+	 {
+		 game_state = GameState::Win;
+	 }
+	 if (et == EventType::Losing)
+	 {
+		 game_state = GameState::Losing;
+	 }
  }

@@ -2,20 +2,14 @@
 #include"PrintHelper.h"
 #include <assert.h>
 
-Snake::Snake(Point p, Field& field_, EventManager& event_manager_) : field(field_), event_manager(event_manager_)
+Snake::Snake(Field& field_, EventManager& event_manager_) : field(field_), event_manager(event_manager_)
 {
-	event_manager.SubscribeOnEvent(this, SnakeEatFood);
 	event_manager.SubscribeOnEvent(this, EnemyCrossWithSnake);
-	event_manager.SubscribeOnEvent(this, SnakeEatFoodFreezing);
 	event_manager.SubscribeOnEvent(this, SnakeEatFoodCanNotEatSnake);
-
-    const int size = 1;
-    points.resize(size);
-    for (int i = 0; i < size; ++i)
-    {
-        points[i].x = p.x;
-        points[i].y = p.y - i;
-    }
+	event_manager.SubscribeOnEvent(this, MoveUp);
+	event_manager.SubscribeOnEvent(this, MoveLeft);
+	event_manager.SubscribeOnEvent(this, MoveRight);
+	event_manager.SubscribeOnEvent(this, MoveDown);
 }
 
 Point Snake::Head()
@@ -39,7 +33,46 @@ bool Snake::CheckProximityOfPoints(Point p1, Point p2)
 
 void Snake::Move(Point p)
 {
-	if ((can_be_eaten == false) && (field.Get(p) == Objects::Enemy))
+	if (!field.InTheField(p) || (field.Get(p) == Objects::Block))
+		return;
+	if(field.Get(p) == Objects::Food)
+	{
+		Add(p);
+		if (Size() == snake_size_for_win)
+		{
+			event_manager.PushEvent(Win);
+			return;
+		}
+		event_manager.PushEvent(SnakeEatFood);
+		return;
+	}
+	if (field.Get(p) == Objects::FoodFreezing)
+	{
+		event_manager.PushEvent(SnakeEatFoodFreezing);
+	}
+	if (field.Get(p) == Objects::FoodCanNotEatSnake)
+	{
+		event_manager.PushEvent(SnakeEatFoodCanNotEatSnake);
+	}
+	if (p == Head())
+		return;
+	if (field.Get(p) == Objects::Snake)
+	{
+		if (PointIsSecondElemOfSnake(p))
+			return;
+		else
+		{
+			event_manager.PushEvent(Losing);
+			return;
+		}
+	}
+	if ((field.Get(p) == Objects::Enemy) && GetCanBeEaten())
+	{
+		event_manager.PushEvent(Losing);
+		return;
+	}
+
+	if (!can_be_eaten && (field.Get(p) == Objects::Enemy))
 		return;
     if ((points[0].x == p.x) && (points[0].y == p.y))
         return;
@@ -95,23 +128,16 @@ int Snake::Size()
     return (int)points.size();
 }
 
-std::vector<Point> Snake::CutOfTail(Point p)
+void Snake::CutOfTail(Point p)
 {
-	int start_idx = 0;
-	int snake_size = points.size();
-	while ((start_idx < snake_size) && !(points[start_idx] == p))
+	while(true)
 	{
-		++start_idx;
+		Point last = points.back();
+		field.Set(last, Objects::Empty);
+		points.pop_back();
+		if (last == p)
+			break;
 	}
-	assert(start_idx < snake_size);
-	std::vector<Point> tail(snake_size - start_idx);
-	for (int j = 0; j < tail.size(); ++j)
-	{
-		tail[j] = points[start_idx + j];
-	}
-	points.resize(start_idx);
-
-	return tail;
 }
 
 const std::vector<Point>& Snake::GetPoints()
@@ -149,7 +175,6 @@ void Snake::OnEvent(EventType et)
 {
 	if (et == EventType::EnemyCrossWithSnake)
 	{
-
 		return;
 	}
 	if (et == EventType::SnakeEatFoodCanNotEatSnake)
@@ -157,6 +182,36 @@ void Snake::OnEvent(EventType et)
 		SetCanBeEaten();
 		return;
 	}
-
+	
+	if (et == EventType::MoveUp)
+	{
+		Move(Head() + Point{0, -1});
+		return;
+	}
+	if (et == EventType::MoveLeft)
+	{
+		Move(Head() + Point{ -1, 0 });
+		return;
+	}
+	if (et == EventType::MoveRight)
+	{
+		Move(Head() + Point{ 1, 0 });
+		return;
+	}
+	if (et == EventType::MoveDown)
+	{
+		Move(Head() + Point{ 0, 1 });
+		return;
+	}
 	throw;
+}
+
+void Snake::Action()
+{
+	if (points.empty())
+	{
+		points.push_back(field.GeneratePoint());
+		field.Set(Head(), Objects::Snake);
+	}
+	return;
 }

@@ -82,9 +82,9 @@ std::vector<Point> Enemy::ShortestDirectionTowardsTheSnake()
 	int free_place = -3;
 	auto field_size = field.GetFieldSize();
 	std::vector<std::vector<int>> lenght(field_size.second, std::vector<int>(field_size.first, free_place));
-	for (short i = 0; i < field_size.second; ++i)
+	for (short i = 1; i < field_size.second; ++i)
 	{
-		for (short j = 0; j < field_size.first; ++j)
+		for (short j = 1; j < field_size.first; ++j)
 		{
 			switch (field.Get(Point{ j, i }))
 			{
@@ -155,13 +155,16 @@ void Enemy::OnEvent(EventType et)
 {
 	if (et == EventType::EnemyCrossWithSnake)
 	{
-
 		return;
 	}
 
 	if (et == EventType::SnakeEatFoodFreezing)
 	{
 		SetFreezing();
+		return;
+	}
+	if (et == EventType::SnakeEatFoodCanNotEatSnake)
+	{
 		return;
 	}
 	throw;

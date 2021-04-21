@@ -4,14 +4,20 @@
 #include"Enemy.h"
 #include "FreezingFood.h"
 #include "FoodCanNotEatSnake.h"
+#include "Food.h"
 
-class Logic
+enum class GameState
+{
+	Continue,
+	Win, 
+	Losing
+};
+
+class Logic : public EventSubscriber
 {
     //const char snake_symbol = 219;
     //const char food_symbol = '*';
 	//const char enemy_symbol = 197;
-	const Point snake_start_position{ 44, 10 };
-    const int snake_size_for_win = 3;
 	const int count_of_block;
 	std::vector<Point> block;
 	//const char block_symbol = 186;
@@ -23,28 +29,29 @@ class Logic
 	EventManager event_manager;
     Snake snake;
 	Enemy enemy;
-    Point food;
+    Food food;
 	FreezingFood freezingfood;
 	FoodCanNotEatSnake food_can_not_eat_snake;
+	GameState game_state;
 
+	void GenerateMoveEvent(char c);
 	void GenerateBlockPosition();
 	void GenerateEnemyPosition();
 	void InitializeTheGame();
-    Point MovePoint(Point p, char c);
 
 	Point GenerateNeighborPoint(Point p, bool snake_intersections = true, Point exceptional_point = { 0, 0 });
 	Point NewEnemyPosition(Point enemy_coordinates, Point smart_point);
-	void ClearTailOfSnake(Point p);
 	bool MoveEnemy(int idx, Point smart_point);
 	bool MoveAllEnemy();
-	bool FieldCheck();
 
-    void ThreadFunction1(char& new_dir, bool& you_win);///////////////////////
+    void ThreadFunction1(char& new_dir);///////////////////////
     void ThreadFunction2(char& new_dir, bool& cond);/////////////////////////
 	
 public:
     Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_);
 	~Logic();
     bool Run();
+
+	void OnEvent(EventType);
     
 };

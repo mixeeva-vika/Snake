@@ -47,21 +47,23 @@ Point Field::GeneratePoint(const std::vector<Objects>& v)
  
 void Field::Set(Point p, Objects ob)
 {
-	if (InTheField(p))
-	{
-		int a = 0;
-	}
+	assert(InTheField(p));
+	//if (InTheField(p) != true)
+	//{
+	//	int a = 0;
+	//}
 	field[p.y][p.x] = ob;
 	pr.Print(p, symbols[static_cast<int>(ob)]);
 }
 
 Objects Field::Get(Point p)
 {
-	//assert(InTheField(p));
-	if (InTheField(p) != true)
-	{
-		int a = 0;
-	}
+	assert(InTheField(p));
+	//if (InTheField(p) != true)
+	//{
+
+	//	int a = 0;
+	//}
 	return field[p.y][p.x];
 }
 

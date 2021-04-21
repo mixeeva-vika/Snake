@@ -13,6 +13,7 @@ class Enemy: public EventSubscriber
 	double brean;
 	bool freezing = false;
 	bool can_be_eaten = false;
+	//bool snake_can_be_eaten = true;
 	unsigned int start_freezing_time = clock();
 	time_t freezing_time = 5000;
 	Field& field;

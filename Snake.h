@@ -11,31 +11,34 @@ class Snake : public EventSubscriber
     std::vector<Point> points;
 	bool freezing = false;
 	bool can_be_eaten = true;
+	const int snake_size_for_win = 3;
 	unsigned int start_time = clock();
 	time_t time_can_not_be_eaten = 10000;
 	Field& field;
 	EventManager& event_manager;
 
-
-public:
-    Snake(Point p, Field& field_, EventManager& event_manager_);
-    Point Head();
-    Point Tail();
+	Point Tail();
 	bool CheckProximityOfPoints(Point p1, Point p2);
-    void Move(Point p);
-    void Add(Point p);
+	void Move(Point p);
+	void Add(Point p);
 	void AddTail(Point p);
-    bool PointBelongsToTheSnake(Point p);
-    bool PointIsSecondElemOfSnake(Point p);
-    int Size();
-	std::vector<Point> CutOfTail(Point p);
-	const std::vector<Point>& GetPoints();
-
+	bool PointIsSecondElemOfSnake(Point p);
+	int Size();
 	bool GetFreezing();
 	void SetFreezing(bool freez);
-	bool GetCanBeEaten();
+	const std::vector<Point>& GetPoints();
 	void SetCanBeEaten();
 
+
+public:
+    Snake(Field& field_, EventManager& event_manager_);
+    Point Head();
+   
+    bool PointBelongsToTheSnake(Point p);
+	void CutOfTail(Point p);
+	bool GetCanBeEaten();
+
 	void OnEvent(EventType);
+	void Action();
 
 };

@@ -5,12 +5,15 @@ enum EventType
 	SnakeEatFoodFreezing,
 	SnakeEatFoodCanNotEatSnake,
 	EnemyCrossWithSnake,
+	MoveUp,
+	MoveLeft,
+	MoveRight,
+	MoveDown,
 	Win,
-	Losing
-
+	Losing,
+	EventCount
 
 };
-const int event_count = 4;
 
 class EventSubscriber
 {

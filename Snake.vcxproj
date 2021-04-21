@@ -113,6 +113,7 @@
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EventManager.cpp" />
     <ClCompile Include="Field.cpp" />
+    <ClCompile Include="Food.cpp" />
     <ClCompile Include="FoodCanNotEatSnake.cpp" />
     <ClCompile Include="FreezingFood.cpp" />
     <ClCompile Include="Level.cpp" />
@@ -125,6 +126,7 @@
     <ClInclude Include="EventManager.h" />
     <ClInclude Include="EventSubscriber.h" />
     <ClInclude Include="Field.h" />
+    <ClInclude Include="Food.h" />
     <ClInclude Include="FoodCanNotEatSnake.h" />
     <ClInclude Include="FreezingFood.h" />
     <ClInclude Include="Level.h" />
