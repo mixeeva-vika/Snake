@@ -110,6 +110,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Block.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EventManager.cpp" />
     <ClCompile Include="Field.cpp" />
@@ -122,6 +123,7 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Block.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="EventManager.h" />
     <ClInclude Include="EventSubscriber.h" />

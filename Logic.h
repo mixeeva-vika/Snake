@@ -1,6 +1,7 @@
 #pragma once
 #include"Field.h"
 #include"Snake.h"
+#include"Block.h"
 #include"Enemy.h"
 #include "FreezingFood.h"
 #include "FoodCanNotEatSnake.h"
@@ -18,8 +19,7 @@ class Logic : public EventSubscriber
     //const char snake_symbol = 219;
     //const char food_symbol = '*';
 	//const char enemy_symbol = 197;
-	const int count_of_block;
-	std::vector<Point> block;
+	
 	//const char block_symbol = 186;
 	int count_of_enemy;
 	int power_of_brean_of_enemy;
@@ -30,12 +30,12 @@ class Logic : public EventSubscriber
     Snake snake;
 	Enemy enemy;
     Food food;
+	Block block;
 	FreezingFood freezingfood;
 	FoodCanNotEatSnake food_can_not_eat_snake;
 	GameState game_state;
 
 	void GenerateMoveEvent(char c);
-	void GenerateBlockPosition();
 	void GenerateEnemyPosition();
 	void InitializeTheGame();
 

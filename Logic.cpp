@@ -8,33 +8,23 @@
 Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_):
 	snake(field, event_manager),
     count_of_enemy(count_of_enemy_), 
-	count_of_block(count_of_block_),
 	power_of_brean_of_enemy(power_of_brean_of_enemy_),
 	enemy(count_of_enemy, field, event_manager),
 	freezingfood(field, event_manager),
 	food_can_not_eat_snake(field, event_manager),
-	food(field, event_manager)
+	food(field, event_manager),
+	block(field, event_manager, count_of_block_)
 {
 	event_manager.SubscribeOnEvent(this, EventType::Win);
 	event_manager.SubscribeOnEvent(this, EventType::Losing);
 
     srand(static_cast<unsigned int>(time(0)));
-	block.resize(count_of_block); 
 	game_state = GameState::Continue;
 }
 
 Logic::~Logic()
 {
 	field.Clear();
-}
-
-void Logic::GenerateBlockPosition()
-{
-	for (int i = 0; i < count_of_block; ++i)
-	{
-		block[i] = field.GeneratePoint();
-		field.Set(block[i], Objects::Block);
-	}
 }
 
 void Logic::GenerateEnemyPosition()
@@ -57,10 +47,10 @@ void Logic::GenerateEnemyPosition()
 void Logic::InitializeTheGame()
 {
 	field.Clear();
-	field.DrawTheFieldBoundary();
-	GenerateBlockPosition();
+	field.DrawTheFieldBoundary();           
 	GenerateEnemyPosition();
 	snake.Action();
+	block.Action();
 }
 
 void Logic::GenerateMoveEvent(char c)
