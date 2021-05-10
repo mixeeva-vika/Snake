@@ -1,11 +1,15 @@
 #include"Enemy.h"
 #include"PrintHelper.h"
-#include<assert.h>
+#include <assert.h>
 #include <queue>
 
-Enemy::Enemy(int size, Field& field_, EventManager& event_manager_): field(field_), event_manager(event_manager_)
+Enemy::Enemy(Field& field_, EventManager& event_manager_, int count_of_enemy_, int power_of_brean_of_enemy_)
+	: field(field_),
+	event_manager(event_manager_), 
+	count_of_enemy(count_of_enemy_), 
+	power_of_brean_of_enemy(power_of_brean_of_enemy_)
 {
-	points.resize(size, {0, 0});
+	event_manager.SubscribeOnEvent(this, InitializeTheGame);
 	event_manager.SubscribeOnEvent(this, EnemyCrossWithSnake);
 	event_manager.SubscribeOnEvent(this, SnakeEatFoodFreezing);
 	event_manager.SubscribeOnEvent(this, SnakeEatFoodCanNotEatSnake);
@@ -151,8 +155,94 @@ std::vector<Point> Enemy::ShortestDirectionTowardsTheSnake()
 	return res;
 }
 
+
+Point Enemy::GenerateNeighborPoint(Point p, bool snake_intersections, Point exceptional_point)
+{
+	int new_direction = rand() % 4;
+
+	for (int i = 0; i < offset_points.size(); ++i)
+	{
+		Point new_point = p + offset_points[new_direction];
+		if (field.InTheField(new_point) && (new_point != exceptional_point) &&
+			((field.Get(new_point) == Objects::Empty) || (snake_intersections && field.Get(new_point) == Objects::Snake)))
+			return new_point;
+		new_direction = (new_direction + 1) % 4;
+	}
+	return p;
+}
+
+Point Enemy::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
+{
+	bool smart_point_is_correct = ((smart_point != Point{ 0,0 }) && (field.Get(smart_point) != Objects::Enemy) && (SnakeGetCanBeEaten() || field.Get(smart_point) != Objects::Snake));
+	int step = rand() % 10;
+	if (smart_point_is_correct && (step <= power_of_brean_of_enemy))
+		return smart_point;
+	return GenerateNeighborPoint(enemy_coordinates, SnakeGetCanBeEaten());
+}
+
+bool Enemy::MoveEnemy(int enemy_idx, Point smart_point)
+{
+	Point enemy_coordinates = Get(enemy_idx);
+	Point new_enemy_coordinates = NewEnemyPosition(enemy_coordinates, smart_point);
+	//assert(snake.GetCanBeEaten() || field.Get(new_enemy_coordinates) != Objects::Snake);
+	if (field.Get(new_enemy_coordinates) == Objects::Snake)
+	{
+		if (new_enemy_coordinates == snake.Head())
+			return false;
+		else
+			snake.CutOfTail(new_enemy_coordinates);
+	}
+	Set(new_enemy_coordinates, enemy_idx);
+	return true;
+}
+
+bool Enemy::MoveAllEnemy()
+{
+	std::vector<Point> smart_position = ShortestDirectionTowardsTheSnake();
+	for (int i = 0; i < Size(); ++i)
+	{
+		if (MoveEnemy(i, smart_position[i]) == false)
+			return false;
+	}
+	return true;
+}
+
+
+bool Enemy::SnakeGetCanBeEaten()
+{
+	if (snake_can_be_eaten == false)
+	{
+		unsigned int cur_time = clock();
+		if (cur_time - start_time_for_snake_can_not_be_eaten >= time_snake_can_not_be_eaten)
+		{
+			snake_can_be_eaten = true;
+		}
+	}
+	return snake_can_be_eaten;
+}
+void Enemy::SnakeSetCanBeEaten()
+{
+	snake_can_be_eaten = false;
+	start_time_for_snake_can_not_be_eaten = clock();
+}
+
+
+void Enemy::Init()
+{
+	for (int i = 0; i < count_of_enemy; i++)
+	{
+		Point cur = field.GeneratePoint();
+		points.push_back(cur);
+		field.Set(cur, Objects::Enemy);
+	}
+}
+
 void Enemy::OnEvent(EventType et)
 {
+	if (et == EventType::InitializeTheGame)
+	{
+		Init();
+	}
 	if (et == EventType::EnemyCrossWithSnake)
 	{
 		return;
@@ -163,9 +253,24 @@ void Enemy::OnEvent(EventType et)
 		SetFreezing();
 		return;
 	}
+
+	if (et == EventType::SnakeEatFoodCanNotEatSnake)
+	{
+		SnakeSetCanBeEaten();
+		return;
+	}
+
 	if (et == EventType::SnakeEatFoodCanNotEatSnake)
 	{
 		return;
 	}
 	throw;
 }
+
+void Enemy::Action()
+{
+	
+	return;
+}
+
+

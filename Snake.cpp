@@ -4,8 +4,8 @@
 
 Snake::Snake(Field& field_, EventManager& event_manager_) : field(field_), event_manager(event_manager_)
 {
+	event_manager.SubscribeOnEvent(this, InitializeTheGame);
 	event_manager.SubscribeOnEvent(this, EnemyCrossWithSnake);
-	event_manager.SubscribeOnEvent(this, SnakeEatFoodCanNotEatSnake);
 	event_manager.SubscribeOnEvent(this, MoveUp);
 	event_manager.SubscribeOnEvent(this, MoveLeft);
 	event_manager.SubscribeOnEvent(this, MoveRight);
@@ -66,14 +66,12 @@ void Snake::Move(Point p)
 			return;
 		}
 	}
-	if ((field.Get(p) == Objects::Enemy) && GetCanBeEaten())
+	if (field.Get(p) == Objects::Enemy)
 	{
 		event_manager.PushEvent(Losing);
 		return;
 	}
 
-	if (!can_be_eaten && (field.Get(p) == Objects::Enemy))
-		return;
     if ((points[0].x == p.x) && (points[0].y == p.y))
         return;
 
@@ -153,33 +151,26 @@ void Snake::SetFreezing(bool freez)
 {
 	freezing = freez;
 }
-bool Snake::GetCanBeEaten()
-{
-	if (can_be_eaten == false)
-	{
-		unsigned int cur_time = clock();
-		if (cur_time - start_time >= time_can_not_be_eaten)
-		{
-			can_be_eaten = true;
-		}
-	}
-	return can_be_eaten;
-}
-void Snake::SetCanBeEaten()
-{
-	can_be_eaten = false;
-	start_time = clock();
-}
 
+
+
+void Snake::Init()
+{
+	if (points.empty())
+	{
+		points.push_back(field.GeneratePoint());
+		field.Set(Head(), Objects::Snake);
+	}
+	return;
+}
 void Snake::OnEvent(EventType et)
 {
+	if (et == EventType::InitializeTheGame)
+	{
+		Init();
+	}
 	if (et == EventType::EnemyCrossWithSnake)
 	{
-		return;
-	}
-	if (et == EventType::SnakeEatFoodCanNotEatSnake)
-	{
-		SetCanBeEaten();
 		return;
 	}
 	
@@ -208,10 +199,5 @@ void Snake::OnEvent(EventType et)
 
 void Snake::Action()
 {
-	if (points.empty())
-	{
-		points.push_back(field.GeneratePoint());
-		field.Set(Head(), Objects::Snake);
-	}
-	return;
+
 }

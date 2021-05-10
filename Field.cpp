@@ -1,7 +1,8 @@
 #include "Field.h"
 #include <assert.h>
-Field::Field()
+Field::Field(EventManager& event_manager_) : event_manager(event_manager_)
 {
+	event_manager.SubscribeOnEvent(this, InitializeTheGame);
 	field.resize(height);
 	for (int i = 0; i < height; ++i)
 		field[i].resize(width, Objects::Empty);
@@ -48,10 +49,6 @@ Point Field::GeneratePoint(const std::vector<Objects>& v)
 void Field::Set(Point p, Objects ob)
 {
 	assert(InTheField(p));
-	//if (InTheField(p) != true)
-	//{
-	//	int a = 0;
-	//}
 	field[p.y][p.x] = ob;
 	pr.Print(p, symbols[static_cast<int>(ob)]);
 }
@@ -59,11 +56,6 @@ void Field::Set(Point p, Objects ob)
 Objects Field::Get(Point p)
 {
 	assert(InTheField(p));
-	//if (InTheField(p) != true)
-	//{
-
-	//	int a = 0;
-	//}
 	return field[p.y][p.x];
 }
 
@@ -102,4 +94,25 @@ void Field::PrintLevel(int level_number, int attempt_number)
 void Field::PrintGameOver()
 {
 	pr.Print(Point{ 45 / 2 - 3, 25 / 2 - 5 }, "Game Is Over");
+}
+
+void Field::Init()
+{
+	Clear();
+	DrawTheFieldBoundary();
+	return;
+}
+void Field::OnEvent(EventType et)
+{
+	if (et == EventType::InitializeTheGame)
+	{
+		Init();
+	}
+	
+	throw;
+}
+
+void Field::Action()
+{
+
 }

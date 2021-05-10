@@ -5,15 +5,14 @@
 #include <assert.h>
 #include<iostream>
 
-Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_):
+Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_) :
 	snake(field, event_manager),
-    count_of_enemy(count_of_enemy_), 
-	power_of_brean_of_enemy(power_of_brean_of_enemy_),
-	enemy(count_of_enemy, field, event_manager),
+	enemy(field, event_manager, count_of_enemy_, power_of_brean_of_enemy_),
 	freezingfood(field, event_manager),
 	food_can_not_eat_snake(field, event_manager),
 	food(field, event_manager),
-	block(field, event_manager, count_of_block_)
+	block(field, event_manager, count_of_block_),
+	field(event_manager)
 {
 	event_manager.SubscribeOnEvent(this, EventType::Win);
 	event_manager.SubscribeOnEvent(this, EventType::Losing);
@@ -27,31 +26,6 @@ Logic::~Logic()
 	field.Clear();
 }
 
-void Logic::GenerateEnemyPosition()
-{
-	for (int i = 0; i < count_of_enemy; ++i)
-	{
-		Point new_pos;
-		//do
-		//{
-			new_pos = field.GeneratePoint();
-		//} while (new_pos.Distance(snake.Head()) < 5);
-		for (int j = 0; j < i; ++j)
-		{
-			assert(new_pos != enemy.Get(j));
-		}
-		enemy.Set(new_pos, i);
-	}
-}
-
-void Logic::InitializeTheGame()
-{
-	field.Clear();
-	field.DrawTheFieldBoundary();           
-	GenerateEnemyPosition();
-	snake.Action();
-	block.Action();
-}
 
 void Logic::GenerateMoveEvent(char c)
 {
@@ -74,60 +48,12 @@ void Logic::GenerateMoveEvent(char c)
 
 }
 
-Point Logic::GenerateNeighborPoint(Point p, bool snake_intersections, Point exceptional_point)
-{
-	int new_direction = rand() % 4;
 
-	for (int i = 0; i < offset_points.size(); ++i)
-	{
-		Point new_point = p + offset_points[new_direction];
-		if(field.InTheField(new_point) && (new_point != exceptional_point) &&
-			((field.Get(new_point) == Objects::Empty) || (snake_intersections && field.Get(new_point) == Objects::Snake)))
-			return new_point;
-		new_direction = (new_direction + 1) % 4;
-	}
-	return p;
-}
 
-Point Logic::NewEnemyPosition(Point enemy_coordinates, Point smart_point)
-{
-	bool smart_point_is_correct = ((smart_point != Point{ 0,0 }) && (field.Get(smart_point) != Objects::Enemy) && (snake.GetCanBeEaten() || field.Get(smart_point) != Objects::Snake));
-	int step = rand() % 10;
-	if (smart_point_is_correct && (step <= power_of_brean_of_enemy))
-		return smart_point;
-	return GenerateNeighborPoint(enemy_coordinates, snake.GetCanBeEaten());
-}
-
-bool Logic::MoveEnemy(int enemy_idx, Point smart_point) 
-{
-	Point enemy_coordinates = enemy.Get(enemy_idx);
-	Point new_enemy_coordinates = NewEnemyPosition(enemy_coordinates, smart_point);
-	assert(snake.GetCanBeEaten() || field.Get(new_enemy_coordinates) != Objects::Snake);
-	if (snake.PointBelongsToTheSnake(new_enemy_coordinates))
-	{
-		if (new_enemy_coordinates == snake.Head())
-			return false;
-		else
-			snake.CutOfTail(new_enemy_coordinates);
-	}
-	enemy.Set(new_enemy_coordinates, enemy_idx);
-	return true;
-}
-
-bool Logic::MoveAllEnemy()
-{
-	std::vector<Point> smart_position = enemy.ShortestDirectionTowardsTheSnake();
-	for (int i = 0; i < enemy.Size(); ++i)
-	{
-		if (MoveEnemy(i, smart_position[i]) == false)
-			return false;
-	}
-	return true;
-}
 
 void Logic::ThreadFunction1(char& key)
 {
-	InitializeTheGame();
+	event_manager.PushEvent(EventType::InitializeTheGame);
     Point new_pos;
 	int count = 1;
 	char new_dir = 0;

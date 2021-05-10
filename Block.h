@@ -16,7 +16,8 @@ class Block : public EventSubscriber
 public:
 	Block(Field& field_, EventManager& event_manager_, int count_of_block_);
 	
-	void OnEvent(EventType) { };
-	void Action();
+	void Init();
+	void OnEvent(EventType);
+	void Action() {}
 
 };

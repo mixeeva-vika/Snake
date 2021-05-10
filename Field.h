@@ -4,6 +4,8 @@
 #include <vector>
 #include "Point.h"
 #include "PrintHelper.h"
+#include"EventSubscriber.h"
+#include"EventManager.h"
 
 enum class Objects
 {
@@ -16,7 +18,7 @@ enum class Objects
 	FoodFreezing
 };
 
-class Field
+class Field : public EventSubscriber
 {
 	const short height = 25;
 	const short width = 45;
@@ -32,9 +34,11 @@ class Field
 
 	PrintHelper pr;
 	std::vector<std::vector<Objects>> field;
+	EventManager& event_manager;
 
+	void Init();
 public:
-	Field();
+	Field(EventManager& event_manager_);
 	void Clear();
 	void DrawTheFieldBoundary();
 	Point GeneratePoint(const std::vector<Objects>& v = std::vector<Objects>());//передаем список тех, на кого можно наступать
@@ -46,4 +50,7 @@ public:
 	void PrintWin();
 	void PrintLevel(int level_number, int attempt_number);
 	void PrintGameOver();
+
+	void OnEvent(EventType);
+	void Action();
  };
