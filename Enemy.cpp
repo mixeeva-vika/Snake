@@ -10,7 +10,6 @@ Enemy::Enemy(Field& field_, EventManager& event_manager_, int count_of_enemy_, i
 	power_of_brean_of_enemy(power_of_brean_of_enemy_)
 {
 	event_manager.SubscribeOnEvent(this, InitializeTheGame);
-	event_manager.SubscribeOnEvent(this, EnemyCrossWithSnake);
 	event_manager.SubscribeOnEvent(this, SnakeEatFoodFreezing);
 	event_manager.SubscribeOnEvent(this, SnakeEatFoodCanNotEatSnake);
 }
@@ -187,10 +186,7 @@ bool Enemy::MoveEnemy(int enemy_idx, Point smart_point)
 	//assert(snake.GetCanBeEaten() || field.Get(new_enemy_coordinates) != Objects::Snake);
 	if (field.Get(new_enemy_coordinates) == Objects::Snake)
 	{
-		if (new_enemy_coordinates == snake.Head())
-			return false;
-		else
-			snake.CutOfTail(new_enemy_coordinates);
+		event_manager.PushEvent(new EventWithPoint(EnemyCrossWithSnake, new_enemy_coordinates));
 	}
 	Set(new_enemy_coordinates, enemy_idx);
 	return true;
@@ -237,38 +233,46 @@ void Enemy::Init()
 	}
 }
 
-void Enemy::OnEvent(EventType et)
+void Enemy::OnEvent(Event* et)
 {
-	if (et == EventType::InitializeTheGame)
+	if (et->GetEventType() == EventType::InitializeTheGame)
 	{
 		Init();
-	}
-	if (et == EventType::EnemyCrossWithSnake)
-	{
 		return;
 	}
 
-	if (et == EventType::SnakeEatFoodFreezing)
+	if (et->GetEventType() == EventType::SnakeEatFoodFreezing)
 	{
 		SetFreezing();
 		return;
 	}
 
-	if (et == EventType::SnakeEatFoodCanNotEatSnake)
+	if (et->GetEventType() == EventType::SnakeEatFoodCanNotEatSnake)
 	{
 		SnakeSetCanBeEaten();
 		return;
 	}
 
-	if (et == EventType::SnakeEatFoodCanNotEatSnake)
-	{
-		return;
-	}
 	throw;
+}
+
+bool Enemy::NeedToMove()
+{
+	unsigned int cur_time = clock();
+	if (!GetFreezing() && ((cur_time - start_stop_time >= time_for_move)))
+	{
+		start_stop_time = cur_time;
+		return true;
+	}
+	return false;
 }
 
 void Enemy::Action()
 {
+	if (NeedToMove())
+	{
+		MoveAllEnemy();
+	}
 	
 	return;
 }

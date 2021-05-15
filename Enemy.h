@@ -24,6 +24,10 @@ class Enemy: public EventSubscriber
 
 	unsigned int start_freezing_time = clock();
 	time_t freezing_time = 5000;
+
+	unsigned int start_stop_time = clock();
+	time_t time_for_move = 1000;
+	
 	Field& field;
 	EventManager& event_manager;
 
@@ -48,6 +52,7 @@ public:
 	bool SnakeGetCanBeEaten();
 	void SnakeSetCanBeEaten();
 	
-	void OnEvent(EventType);
+	bool NeedToMove();
+	void OnEvent(Event*);
 	void Action();
 };

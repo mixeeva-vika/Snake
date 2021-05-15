@@ -26,5 +26,5 @@ class FreezingFood : public EventSubscriber
 public:
 	FreezingFood(Field& field_, EventManager& event_manager_);
 	void Action();
-	void OnEvent(EventType);
+	void OnEvent(Event*);
 };

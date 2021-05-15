@@ -1,5 +1,6 @@
 #include "Field.h"
 #include <assert.h>
+
 Field::Field(EventManager& event_manager_) : event_manager(event_manager_)
 {
 	event_manager.SubscribeOnEvent(this, InitializeTheGame);
@@ -83,18 +84,7 @@ void Field::PrintWin()
 	pr.Print(game_over_point_position2, press_enter);
 }
 
-void Field::PrintLevel(int level_number, int attempt_number)
-{
-	std::string current_level = "Level " + std::to_string(level_number);
-	std::string current_try = "Attempt " + std::to_string(attempt_number);
-	pr.Print(Point{ 45 / 2 - 3, 25 / 2 - 5 }, current_level);
-	pr.Print(Point{ 45 / 2 - 3, 25 / 2 - 3 }, current_try);
-}
 
-void Field::PrintGameOver()
-{
-	pr.Print(Point{ 45 / 2 - 3, 25 / 2 - 5 }, "Game Is Over");
-}
 
 void Field::Init()
 {
@@ -102,11 +92,12 @@ void Field::Init()
 	DrawTheFieldBoundary();
 	return;
 }
-void Field::OnEvent(EventType et)
+void Field::OnEvent(Event* et)
 {
-	if (et == EventType::InitializeTheGame)
+	if (et->GetEventType() == EventType::InitializeTheGame)
 	{
 		Init();
+		return;
 	}
 	
 	throw;

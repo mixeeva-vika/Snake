@@ -24,5 +24,5 @@ class FoodCanNotEatSnake : public EventSubscriber
 public:
 	FoodCanNotEatSnake(Field& field_, EventManager& event_manager_);
 	void Action();
-	void OnEvent(EventType);
+	void OnEvent(Event*);
 };

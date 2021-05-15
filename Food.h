@@ -17,5 +17,5 @@ class Food : public EventSubscriber
 public:
 	Food(Field& field_, EventManager& event_manager_);
 	void Action();
-	void OnEvent(EventType);
+	void OnEvent(Event*);
 };

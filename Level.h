@@ -13,5 +13,6 @@ class Level
 	const int count_of_levels = 10;
 public:
 	//Level(int a);
+	void PrintLevel(int level_number, int attempt_number, PrintHelper pr);
 	void Levels();
 };

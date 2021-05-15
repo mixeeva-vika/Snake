@@ -29,12 +29,11 @@ void Food::Action()
 	{
 		Set(field.GeneratePoint());
 	}
-	return;
 }
 
-void Food::OnEvent(EventType et)
+void Food::OnEvent(Event* et)
 {
-	if (et == EventType::SnakeEatFood)
+	if (et->GetEventType() == EventType::SnakeEatFood)
 	{
 		Set(field.GeneratePoint());
 		return;

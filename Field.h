@@ -49,8 +49,7 @@ public:
 	void PrintLevelOver();
 	void PrintWin();
 	void PrintLevel(int level_number, int attempt_number);
-	void PrintGameOver();
 
-	void OnEvent(EventType);
+	void OnEvent(Event*);
 	void Action();
  };

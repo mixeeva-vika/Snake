@@ -40,19 +40,19 @@ void Snake::Move(Point p)
 		Add(p);
 		if (Size() == snake_size_for_win)
 		{
-			event_manager.PushEvent(Win);
+			event_manager.PushEvent(new Event(Win));
 			return;
 		}
-		event_manager.PushEvent(SnakeEatFood);
+		event_manager.PushEvent(new Event(SnakeEatFood));
 		return;
 	}
 	if (field.Get(p) == Objects::FoodFreezing)
 	{
-		event_manager.PushEvent(SnakeEatFoodFreezing);
+		event_manager.PushEvent(new Event(SnakeEatFoodFreezing));
 	}
 	if (field.Get(p) == Objects::FoodCanNotEatSnake)
 	{
-		event_manager.PushEvent(SnakeEatFoodCanNotEatSnake);
+		event_manager.PushEvent(new Event(SnakeEatFoodCanNotEatSnake));
 	}
 	if (p == Head())
 		return;
@@ -62,13 +62,13 @@ void Snake::Move(Point p)
 			return;
 		else
 		{
-			event_manager.PushEvent(Losing);
+			event_manager.PushEvent(new Event(Losing));
 			return;
 		}
 	}
 	if (field.Get(p) == Objects::Enemy)
 	{
-		event_manager.PushEvent(Losing);
+		event_manager.PushEvent(new Event(Losing));
 		return;
 	}
 
@@ -163,33 +163,44 @@ void Snake::Init()
 	}
 	return;
 }
-void Snake::OnEvent(EventType et)
+void Snake::OnEvent(Event* et)
 {
-	if (et == EventType::InitializeTheGame)
+	if (et->GetEventType() == EventType::InitializeTheGame)
 	{
 		Init();
+		return;
 	}
-	if (et == EventType::EnemyCrossWithSnake)
-	{
+	if (et->GetEventType() == EventType::EnemyCrossWithSnake)
+	{ 
+		auto et_with_point = dynamic_cast<EventWithPoint*>(et);
+		Point intersection_point = et_with_point->GetPoint();
+		if (intersection_point == Head())
+		{
+			event_manager.PushEvent(new Event(Losing));
+		}
+		else
+		{
+		    CutOfTail(intersection_point);
+		}
 		return;
 	}
 	
-	if (et == EventType::MoveUp)
+	if (et->GetEventType() == EventType::MoveUp)
 	{
 		Move(Head() + Point{0, -1});
 		return;
 	}
-	if (et == EventType::MoveLeft)
+	if (et->GetEventType() == EventType::MoveLeft)
 	{
 		Move(Head() + Point{ -1, 0 });
 		return;
 	}
-	if (et == EventType::MoveRight)
+	if (et->GetEventType() == EventType::MoveRight)
 	{
 		Move(Head() + Point{ 1, 0 });
 		return;
 	}
-	if (et == EventType::MoveDown)
+	if (et->GetEventType() == EventType::MoveDown)
 	{
 		Move(Head() + Point{ 0, 1 });
 		return;

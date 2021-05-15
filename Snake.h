@@ -33,7 +33,7 @@ public:
     bool PointBelongsToTheSnake(Point p);
 	void CutOfTail(Point p);
 
-	void OnEvent(EventType);
+	void OnEvent(Event*);
 	void Action();
 
 };

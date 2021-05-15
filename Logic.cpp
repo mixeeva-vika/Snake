@@ -6,13 +6,13 @@
 #include<iostream>
 
 Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_) :
+	field(event_manager),
 	snake(field, event_manager),
 	enemy(field, event_manager, count_of_enemy_, power_of_brean_of_enemy_),
-	freezingfood(field, event_manager),
-	food_can_not_eat_snake(field, event_manager),
-	food(field, event_manager),
 	block(field, event_manager, count_of_block_),
-	field(event_manager)
+	food(field, event_manager),
+	freezingfood(field, event_manager),
+	food_can_not_eat_snake(field, event_manager)
 {
 	event_manager.SubscribeOnEvent(this, EventType::Win);
 	event_manager.SubscribeOnEvent(this, EventType::Losing);
@@ -26,24 +26,23 @@ Logic::~Logic()
 	field.Clear();
 }
 
-
 void Logic::GenerateMoveEvent(char c)
 {
 	if (c == 'a')
 	{ 
-		event_manager.PushEvent(EventType::MoveLeft);
+		event_manager.PushEvent(new Event(MoveLeft));
 	}
 	if (c == 'w')
 	{
-		event_manager.PushEvent(EventType::MoveUp);
+		event_manager.PushEvent(new Event(MoveUp));
 	}
 	if (c == 'd')
 	{
-		event_manager.PushEvent(EventType::MoveRight);
+		event_manager.PushEvent(new Event(MoveRight));
 	}
 	if (c == 's')
 	{
-		event_manager.PushEvent(EventType::MoveDown);
+		event_manager.PushEvent(new Event(MoveDown));
 	}	
 
 }
@@ -53,9 +52,8 @@ void Logic::GenerateMoveEvent(char c)
 
 void Logic::ThreadFunction1(char& key)
 {
-	event_manager.PushEvent(EventType::InitializeTheGame);
-    Point new_pos;
-	int count = 1;
+	event_manager.PushEvent(new Event(InitializeTheGame));
+	event_manager.EventHandler();
 	char new_dir = 0;
 	ofstream file("out.txt");
     while (game_state == GameState::Continue)
@@ -87,17 +85,18 @@ void Logic::ThreadFunction1(char& key)
 		{
 			new_dir = key;
 		}
+		if (new_dir == 0)
+		{
+			continue;
+		}
+
         GenerateMoveEvent(new_dir);
         std::this_thread::sleep_for(200ms);
 		snake.Action();
 		food.Action();
 		freezingfood.Action();
 		food_can_not_eat_snake.Action();
-		if ((count % 3 == 0) && (new_dir != 0) && (!enemy.GetFreezing()) && (MoveAllEnemy() == false))
-		{
-			return;
-		}
-		++count;
+		enemy.Action();
 		event_manager.EventHandler();
     }
 }
@@ -129,16 +128,18 @@ void Logic::ThreadFunction2(char& key, bool& cond)
 	 else
 		 field.PrintWin();
 	 thr2.join();
+	 
+	 field.Clear();
 	 return game_state == GameState::Win;
  }
 
- void Logic::OnEvent(EventType et)
+ void Logic::OnEvent(Event* et)
  {
-	 if (et == EventType::Win)
+	 if (et->GetEventType() == EventType::Win)
 	 {
 		 game_state = GameState::Win;
 	 }
-	 if (et == EventType::Losing)
+	 if (et->GetEventType() == EventType::Losing)
 	 {
 		 game_state = GameState::Losing;
 	 }

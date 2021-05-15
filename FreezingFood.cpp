@@ -61,9 +61,9 @@ void FreezingFood::Action()
 	}
 }
 
-void FreezingFood::OnEvent(EventType et)
+void FreezingFood::OnEvent(Event* et)
 {
-	if (et == EventType::SnakeEatFoodFreezing)
+	if (et->GetEventType() == EventType::SnakeEatFoodFreezing)
 	{
 		Set(Point{ 0,0 });
 		return;

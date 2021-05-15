@@ -54,7 +54,7 @@ void FoodCanNotEatSnake::Action()
 	if (NeedToGeneratePoint())
 	{
 		//food_can_not_eat_snake.Set(field.GeneratePoint());
-		Set(Point{ 44, 10 });
+		Set(field.GeneratePoint());
 		field.Set(food_can_not_eat_snake, Objects::FoodCanNotEatSnake);
 	}
 	else if (NeedToClear())
@@ -64,9 +64,9 @@ void FoodCanNotEatSnake::Action()
 	}
 }
 
-void FoodCanNotEatSnake::OnEvent(EventType et)
+void FoodCanNotEatSnake::OnEvent(Event* et)
 {
-	if (et == EventType::SnakeEatFoodCanNotEatSnake)
+	if (et->GetEventType() == EventType::SnakeEatFoodCanNotEatSnake)
 	{
 		Set(Point{ 0,0 });
 		return;

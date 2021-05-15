@@ -17,7 +17,7 @@ public:
 	Block(Field& field_, EventManager& event_manager_, int count_of_block_);
 	
 	void Init();
-	void OnEvent(EventType);
+	void OnEvent(Event*);
 	void Action() {}
 
 };

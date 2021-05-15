@@ -20,11 +20,12 @@ void Block::Init()
 	}
 }
 
-void Block::OnEvent(EventType et)
+void Block::OnEvent(Event* et)
 {
-	if (et == EventType::InitializeTheGame)
+	if (et->GetEventType() == EventType::InitializeTheGame)
 	{
 		Init();
+		return;
 	}
 	throw;
 }

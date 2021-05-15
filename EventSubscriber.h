@@ -23,6 +23,7 @@ class Event
 public:
 	Event(EventType et): event_type(et){}
 	EventType GetEventType()  {return event_type; }
+	virtual ~Event(){}
 };
 
 class EventWithPoint : public Event
@@ -35,8 +36,8 @@ public:
 };
 
 class EventSubscriber
-{
+{ 
 public:
-	virtual void OnEvent(EventType) = 0;
+	virtual void OnEvent(Event*) = 0;
 };
 
