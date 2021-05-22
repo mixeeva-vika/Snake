@@ -7,6 +7,11 @@
 #include"EventSubscriber.h"
 #include"EventManager.h"
 
+//const char snake_symbol = 219;
+//const char food_symbol = '*';
+//const char enemy_symbol = 197;
+//const char block_symbol = 186;
+
 enum class Objects
 {
 	Empty,

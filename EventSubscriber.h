@@ -39,5 +39,6 @@ class EventSubscriber
 { 
 public:
 	virtual void OnEvent(Event*) = 0;
+	virtual void Action() {}
 };
 

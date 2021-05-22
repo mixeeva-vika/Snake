@@ -1,19 +1,24 @@
 #include"Logic.h"
+#include"Snake.h"
+#include"Enemy.h"
+#include"Block.h"
+#include "Food.h"
+#include "FreezingFood.h"
+#include "FoodCanNotEatSnake.h"
+
 #include <thread>
 #include <chrono>
-#include <fstream>
 #include <assert.h>
-#include<iostream>
 
-Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_) :
-	field(event_manager),
-	snake(field, event_manager),
-	enemy(field, event_manager, count_of_enemy_, power_of_brean_of_enemy_),
-	block(field, event_manager, count_of_block_),
-	food(field, event_manager),
-	freezingfood(field, event_manager),
-	food_can_not_eat_snake(field, event_manager)
+Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_brean_of_enemy_) :field(event_manager)
 {
+	game_objects.push_back(new Snake             (field, event_manager));
+	game_objects.push_back(new Enemy             (field, event_manager, count_of_enemy_, power_of_brean_of_enemy_));
+	game_objects.push_back(new Block             (field, event_manager, count_of_block_));
+	game_objects.push_back(new Food              (field, event_manager));
+	game_objects.push_back(new FreezingFood      (field, event_manager));
+	game_objects.push_back(new FoodCanNotEatSnake(field, event_manager));
+
 	event_manager.SubscribeOnEvent(this, EventType::Win);
 	event_manager.SubscribeOnEvent(this, EventType::Losing);
 
@@ -24,6 +29,10 @@ Logic::Logic(int count_of_enemy_, int count_of_block_, int speed_, int power_of_
 Logic::~Logic()
 {
 	field.Clear();
+	for (int i = 0; i < game_objects.size(); ++i)
+	{
+		delete game_objects[i];
+	}
 }
 
 void Logic::GenerateMoveEvent(char c)
@@ -32,34 +41,31 @@ void Logic::GenerateMoveEvent(char c)
 	{ 
 		event_manager.PushEvent(new Event(MoveLeft));
 	}
-	if (c == 'w')
+	else if (c == 'w')
 	{
 		event_manager.PushEvent(new Event(MoveUp));
 	}
-	if (c == 'd')
+	else if (c == 'd')
 	{
 		event_manager.PushEvent(new Event(MoveRight));
 	}
-	if (c == 's')
+	else if (c == 's')
 	{
 		event_manager.PushEvent(new Event(MoveDown));
 	}	
-
 }
 
-
-
-
-void Logic::ThreadFunction1(char& key)
+void Logic::GameAction(char& key)
 {
 	event_manager.PushEvent(new Event(InitializeTheGame));
 	event_manager.EventHandler();
 	char new_dir = 0;
-	ofstream file("out.txt");
-    while (game_state == GameState::Continue)
-    {
+	while (game_state == GameState::Continue)
+	{
 		if (key == 0)
+		{
 			continue;
+		}
 		if (key == 'n')
 		{
 			game_state = GameState::Win;
@@ -92,41 +98,48 @@ void Logic::ThreadFunction1(char& key)
 
         GenerateMoveEvent(new_dir);
         std::this_thread::sleep_for(200ms);
-		snake.Action();
-		food.Action();
-		freezingfood.Action();
-		food_can_not_eat_snake.Action();
-		enemy.Action();
+		
+		for (int i = 0; i < game_objects.size(); ++i)
+		{
+			game_objects[i]->Action();
+		}
 		event_manager.EventHandler();
     }
 }
 
-void Logic::ThreadFunction2(char& key, bool& cond)
+void Logic::ReadKey(char& key, bool& cond)
 {
     char c;
     while (cond)
     {
         c = _getch();
-        if ((c == 'a') || (c == 'w') || (c == 'd') || (c == 's') || (c == 'n') || (c == 'i'))
-            key = c;
-        else
-            continue;
+		if ((c == 'a') || (c == 'w') || (c == 'd') || (c == 's') || (c == 'n') || (c == 'i'))
+		{
+			key = c;
+		}
+		else
+		{
+			continue;
+		}
     } 
 }
 
  bool Logic::Run()
  {
 	 bool cond = true;
-	 //bool you_win = false;
 	 char key = 0; // новое направление, в котором движется змея
-	 std::thread thr1(&Logic::ThreadFunction1, this, std::ref(key));
-	 std::thread thr2(&Logic::ThreadFunction2, this, std::ref(key), std::ref(cond));
+	 std::thread thr1(&Logic::GameAction, this, std::ref(key));
+	 std::thread thr2(&Logic::ReadKey, this, std::ref(key), std::ref(cond));
 	 thr1.join();
 	 cond = false;
 	 if (game_state == GameState::Losing)
+	 {
 		 field.PrintLevelOver();
+	 }
 	 else
+	 {
 		 field.PrintWin();
+	 }
 	 thr2.join();
 	 
 	 field.Clear();

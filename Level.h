@@ -1,8 +1,5 @@
 #pragma once
-#include<iostream>
-#include"Point.h"
 #include"PrintHelper.h"
-#include"Logic.h"
 
 class Level
 {
@@ -11,8 +8,8 @@ class Level
 	int speed;
 	int power_of_brean_of_enemy;
 	const int count_of_levels = 10;
-public:
-	//Level(int a);
+
 	void PrintLevel(int level_number, int attempt_number, PrintHelper pr);
+public:
 	void Levels();
 };
